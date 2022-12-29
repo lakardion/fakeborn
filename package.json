@@ -1,0 +1,13 @@
+{
+  "name": "fakeborn",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "deno run index.ts $0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

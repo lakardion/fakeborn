@@ -1,6 +1,6 @@
 # Summary
 
-Simple repo to create my own fake data with deno. Used for mocked things if FE for occasional convenience since Mockaroo is quite cumbersome to use sometimes.
+Simple repo to create my own fake data with deno. Used for mocked things in FE projects for occasional convenience since Mockaroo is quite cumbersome to work with sometimes.
 
 # Setup
 

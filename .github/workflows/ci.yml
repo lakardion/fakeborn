@@ -6,7 +6,8 @@ on:
     branches: [main]
 
 jobs:
-  verify:
+  lint-format:
+    name: Lint & format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,11 +26,53 @@ jobs:
       - name: Format check
         run: bun run format
 
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install (frozen lockfile)
+        run: bun install --frozen-lockfile
+
       - name: Typecheck
         run: bun run typecheck
 
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install (frozen lockfile)
+        run: bun install --frozen-lockfile
+
       - name: Test
         run: bun test
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install (frozen lockfile)
+        run: bun install --frozen-lockfile
 
       - name: Build
         run: bun run build

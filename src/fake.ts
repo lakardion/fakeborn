@@ -28,5 +28,12 @@ export function fake<TSchema>(schema: TSchema): Infer<TSchema> {
   const adapterName = detectAdapter(schema);
   const toIR = adapters[adapterName];
   const ir = toIR(schema);
+  // The runtime→static boundary. `generate` produces a value the type system
+  // cannot statically tie back to `Infer<TSchema>` (the value is driven by the
+  // IR walked at runtime, not by the type), so this single assertion bridges
+  // the dynamic value to the best-effort inferred type. It is the same boundary
+  // Zod crosses when `.parse()` returns its inferred output. The runtime
+  // guarantee — the fake parses through the schema — is the *tested* contract;
+  // this cast carries no safety the round-trip tests don't already defend.
   return generate(ir) as Infer<TSchema>;
 }

@@ -6,7 +6,8 @@
     "pedantic": "off"
   },
   "rules": {
-    "import/no-cycle": "error"
+    "import/no-cycle": "error",
+    "no-underscore-dangle": ["warn", { "allow": ["_def", "_output"] }]
   },
   "overrides": [
     {

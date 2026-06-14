@@ -13,9 +13,15 @@ export function generate(node: IRNode, fakerMap: FakerMap = defaultFakerMap): un
   const ctx: GeneratorContext = {
     generate: (child) => generate(child, fakerMap),
   };
-  const gen = fakerMap[node.kind] as ((node: IRNode, ctx: GeneratorContext) => unknown) | undefined;
+  const gen = fakerMap[node.kind];
   if (!gen) {
     throw new Error(`fakeborn: no faker mapping for IR node kind "${node.kind}".`);
   }
-  return gen(node, ctx);
+  // `gen` is the entry for *this* node's kind, but the compiler types
+  // `fakerMap[node.kind]` as the union of every per-kind generator, whose
+  // shared parameter type reduces to `never` — the correlated-union limitation
+  // (microsoft/TypeScript#30581, #47109). The missing-entry case above stays
+  // fully type-checked; this assertion only bridges that one contravariant gap
+  // (`node`'s runtime kind matches `gen`) and never escapes this function.
+  return (gen as (node: IRNode, ctx: GeneratorContext) => unknown)(node, ctx);
 }

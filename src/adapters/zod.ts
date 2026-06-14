@@ -1,19 +1,20 @@
+import { isZodSchema } from "../detect";
 import type { IRNode } from "../ir";
-
-/** Minimal structural view of the Zod internals we read — no zod import. */
-type ZodDef = { typeName?: string };
-type ZodSchemaLike = { _def?: ZodDef };
 
 /**
  * Zod adapter: walk a Zod schema's `_def` tree into the library-agnostic IR.
  * This is the only code that knows Zod's internals; everything downstream sees
  * IR alone.
  *
+ * The top-level `_def.typeName` read is shared with detection via the
+ * `isZodSchema` type predicate, so reading it needs no cast. Deeper `_def`
+ * fields (checks, shape, …) get their own narrowing as later slices add them.
+ *
  * v1 tracer: only `ZodString` is handled. Unsupported constructs throw a
  * descriptive error rather than producing a silently invalid fake.
  */
 export function zodToIR(schema: unknown): IRNode {
-  const typeName = (schema as ZodSchemaLike)?._def?.typeName;
+  const typeName = isZodSchema(schema) ? schema._def.typeName : undefined;
   switch (typeName) {
     case "ZodString":
       return { kind: "string" };

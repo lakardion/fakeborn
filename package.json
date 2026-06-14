@@ -1,13 +1,45 @@
 {
   "name": "fakeborn",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.ts",
+  "description": "Generate fake data born from your validation schema — pass a validator (Zod, Valibot) to fake() and get a value that satisfies it.",
   "type": "module",
-  "scripts": {
-    "start": "deno run index.ts $0"
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
-  "keywords": [],
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target node --external @faker-js/faker && bun run build:types",
+    "build:types": "tsc -p tsconfig.build.json --emitDeclarationOnly --outDir dist",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "check": "bun run typecheck && bun test"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.5.0",
+    "zod": "^3.23.0"
+  },
+  "keywords": [
+    "faker",
+    "fake",
+    "mock",
+    "test-data",
+    "zod",
+    "valibot",
+    "schema",
+    "validator"
+  ],
   "author": "",
   "license": "ISC"
 }

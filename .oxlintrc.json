@@ -1,0 +1,26 @@
+{
+  "plugins": ["typescript", "unicorn", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "pedantic": "off"
+  },
+  "rules": {
+    "import/no-cycle": "error"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.{ts,tsx}"],
+      "rules": {
+        "typescript/no-explicit-any": "error",
+        "typescript/consistent-type-imports": "error"
+      }
+    },
+    {
+      "files": ["**/*.test.ts"],
+      "rules": {
+        "typescript/no-explicit-any": "off"
+      }
+    }
+  ]
+}

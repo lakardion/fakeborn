@@ -24,4 +24,11 @@ export type FakerMap = {
 /** The default kind → faker generator table used by `fake()`. */
 export const defaultFakerMap: FakerMap = {
   string: () => faker.string.sample(),
+  number: () => faker.number.float(),
+  boolean: () => faker.datatype.boolean(),
+  date: () => faker.date.anytime(),
+  bigint: () => faker.number.bigInt(),
+  // A literal is its one allowed value; an enum is one of its allowed members.
+  literal: (node) => node.value,
+  enum: (node) => faker.helpers.arrayElement(node.values),
 };

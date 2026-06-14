@@ -11,10 +11,12 @@ import type { IRNode } from "../ir";
  * fields (a literal's `value`, an enum's `values`) are read off the same
  * narrowed `_def` with `in`-narrowing — still no cast — as each construct lands.
  *
- * Scalars handled: ZodString, ZodNumber, ZodBoolean, ZodDate, ZodBigInt,
- * ZodLiteral, ZodEnum. Plain (unconstrained) values only — length/bound/format
- * honoring is a later slice. Unsupported constructs throw a descriptive error
- * rather than producing a silently invalid fake.
+ * Scalars: ZodString, ZodNumber, ZodBoolean, ZodDate, ZodBigInt, ZodLiteral,
+ * ZodEnum. Composites: ZodObject, ZodArray, ZodTuple, ZodUnion, ZodOptional,
+ * ZodNullable — these recurse back through `zodToIR` on their child schemas, so
+ * nesting works to arbitrary depth. Plain (unconstrained) values only —
+ * length/bound/format honoring is a later slice. Unsupported constructs throw a
+ * descriptive error rather than producing a silently invalid fake.
  */
 export function zodToIR(schema: unknown): IRNode {
   const def = isZodSchema(schema) ? schema._def : undefined;
@@ -41,10 +43,53 @@ export function zodToIR(schema: unknown): IRNode {
         return { kind: "enum", values: def.values };
       }
       break;
+    case "ZodObject":
+      // `_def.shape` is a thunk returning the `{ key: schema }` map; each value
+      // is itself a schema, walked recursively.
+      if (def && "shape" in def && typeof def.shape === "function") {
+        const shape: unknown = def.shape();
+        if (typeof shape === "object" && shape !== null) {
+          const entries: Record<string, IRNode> = {};
+          for (const [key, child] of Object.entries(shape)) {
+            entries[key] = zodToIR(child);
+          }
+          return { kind: "object", entries };
+        }
+      }
+      break;
+    case "ZodArray":
+      // `_def.type` is the element schema.
+      if (def && "type" in def) {
+        return { kind: "array", element: zodToIR(def.type) };
+      }
+      break;
+    case "ZodTuple":
+      // `_def.items` is the positional element schemas.
+      if (def && "items" in def && Array.isArray(def.items)) {
+        return { kind: "tuple", elements: def.items.map((item) => zodToIR(item)) };
+      }
+      break;
+    case "ZodUnion":
+      // `_def.options` is the member schemas.
+      if (def && "options" in def && Array.isArray(def.options)) {
+        return { kind: "union", options: def.options.map((option) => zodToIR(option)) };
+      }
+      break;
+    case "ZodOptional":
+      // Both wrappers carry their wrapped schema on `_def.innerType`.
+      if (def && "innerType" in def) {
+        return { kind: "optional", inner: zodToIR(def.innerType) };
+      }
+      break;
+    case "ZodNullable":
+      if (def && "innerType" in def) {
+        return { kind: "nullable", inner: zodToIR(def.innerType) };
+      }
+      break;
   }
   throw new Error(
     `fakeborn: unsupported Zod schema "${def?.typeName ?? "unknown"}". ` +
-      "v1 currently supports z.string(), z.number(), z.boolean(), z.date(), " +
-      "z.bigint(), z.literal(), and z.enum(); more constructs are coming.",
+      "Supported so far: string, number, boolean, date, bigint, literal, enum, " +
+      "object, array, tuple, union, optional, nullable. More constructs are coming.",
   );
 }

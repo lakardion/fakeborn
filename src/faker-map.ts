@@ -31,4 +31,26 @@ export const defaultFakerMap: FakerMap = {
   // A literal is its one allowed value; an enum is one of its allowed members.
   literal: (node) => node.value,
   enum: (node) => faker.helpers.arrayElement(node.values),
+  // Composites recurse through `ctx.generate`, so they never touch faker
+  // directly for their children and nest to arbitrary depth.
+  object: (node, ctx) => {
+    const result: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(node.entries)) {
+      result[key] = ctx.generate(child);
+    }
+    return result;
+  },
+  // A small non-empty array when the length is unconstrained (bounds land in a
+  // later slice).
+  array: (node, ctx) => {
+    const length = faker.number.int({ min: 1, max: 3 });
+    return Array.from({ length }, () => ctx.generate(node.element));
+  },
+  tuple: (node, ctx) => node.elements.map((element) => ctx.generate(element)),
+  // Pick one option and fake it.
+  union: (node, ctx) => ctx.generate(faker.helpers.arrayElement(node.options)),
+  // Present-by-default: an optional field gets a valid value, a nullable field
+  // a valid non-null value, so the fake is "full" and obviously satisfies.
+  optional: (node, ctx) => ctx.generate(node.inner),
+  nullable: (node, ctx) => ctx.generate(node.inner),
 };

@@ -100,3 +100,87 @@ describe("fake() — Zod scalar primitives", () => {
     expect(members).toContain(fake(schema));
   });
 });
+
+describe("fake() — Zod composite types", () => {
+  test("object: every required property is populated, and parses", () => {
+    const schema = z.object({ name: z.string(), age: z.number(), active: z.boolean() });
+    roundTrip(schema);
+    faker.seed(0);
+    const value = fake(schema);
+    expect(value).toHaveProperty("name");
+    expect(value).toHaveProperty("age");
+    expect(value).toHaveProperty("active");
+  });
+
+  test("nested objects are faked recursively to depth, and parse", () => {
+    const schema = z.object({
+      id: z.string(),
+      profile: z.object({
+        email: z.string(),
+        meta: z.object({ score: z.number(), label: z.literal("inner") }),
+      }),
+    });
+    roundTrip(schema);
+    faker.seed(0);
+    const value = fake(schema);
+    expect(value.profile.meta.label).toBe("inner");
+  });
+
+  test("array: a non-empty array of valid elements that parses", () => {
+    const schema = z.array(z.number());
+    roundTrip(schema);
+    faker.seed(0);
+    const value = fake(schema);
+    expect(Array.isArray(value)).toBe(true);
+    expect(value.length).toBeGreaterThan(0);
+  });
+
+  test("tuple: each position satisfies its element type, and parses", () => {
+    const schema = z.tuple([z.string(), z.number(), z.boolean()]);
+    roundTrip(schema);
+    faker.seed(0);
+    const value = fake(schema);
+    expect(typeof value[0]).toBe("string");
+    expect(typeof value[1]).toBe("number");
+    expect(typeof value[2]).toBe("boolean");
+  });
+
+  test("union: the result matches one of the options, and parses", () => {
+    const schema = z.union([z.string(), z.number()]);
+    roundTrip(schema);
+    faker.seed(0);
+    expect(["string", "number"]).toContain(typeof fake(schema));
+  });
+
+  test("optional: present with a valid value by default, and parses", () => {
+    const schema = z.object({ maybe: z.string().optional() });
+    roundTrip(schema);
+    faker.seed(0);
+    const value = fake(schema);
+    // "full" fake: the optional field is populated, not omitted.
+    expect(value.maybe).toBeDefined();
+    expect(typeof value.maybe).toBe("string");
+  });
+
+  test("nullable: a valid non-null value by default, and parses", () => {
+    const schema = z.object({ note: z.string().nullable() });
+    roundTrip(schema);
+    faker.seed(0);
+    const value = fake(schema);
+    expect(value.note).not.toBeNull();
+    expect(typeof value.note).toBe("string");
+  });
+
+  test("a realistic composite schema round-trips", () => {
+    const schema = z.object({
+      id: z.string(),
+      tags: z.array(z.string()),
+      role: z.enum(["admin", "user", "guest"]),
+      nickname: z.string().optional(),
+      deletedAt: z.date().nullable(),
+      coords: z.tuple([z.number(), z.number()]),
+      kind: z.union([z.literal("a"), z.literal("b")]),
+    });
+    roundTrip(schema);
+  });
+});

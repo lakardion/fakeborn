@@ -243,3 +243,68 @@ describe("fake() — Zod constraints & formats", () => {
     roundTrip(schema);
   });
 });
+
+describe("fake() — options", () => {
+  test("count returns an array of N independently-satisfying fakes", () => {
+    const schema = z.object({ id: z.string(), n: z.number() });
+    for (let i = 0; i < 200; i++) {
+      faker.seed(i);
+      const values = fake(schema, { count: 5 });
+      expect(Array.isArray(values)).toBe(true);
+      expect(values).toHaveLength(5);
+      for (const value of values) {
+        expect(() => schema.parse(value)).not.toThrow();
+      }
+    }
+  });
+
+  test("count fakes are independently generated, not N copies of one", () => {
+    faker.seed(0);
+    // Ten random strings being identical is effectively impossible, so a set
+    // with >1 member proves each element was generated fresh.
+    const values = fake(z.string(), { count: 10 });
+    expect(new Set(values).size).toBeGreaterThan(1);
+  });
+
+  test("no count returns a single fake, not an array", () => {
+    faker.seed(0);
+    const value = fake(z.string());
+    expect(Array.isArray(value)).toBe(false);
+    expect(typeof value).toBe("string");
+  });
+
+  test("count: 0 returns an empty array", () => {
+    faker.seed(0);
+    expect(fake(z.string(), { count: 0 })).toEqual([]);
+  });
+
+  test("seed option produces deterministic output across calls", () => {
+    const schema = z.object({ name: z.string(), age: z.number(), tags: z.array(z.string()) });
+    const a = fake(schema, { seed: 123 });
+    const b = fake(schema, { seed: 123 });
+    expect(a).toEqual(b);
+  });
+
+  test("different seeds produce different output", () => {
+    const schema = z.object({ name: z.string(), age: z.number() });
+    const a = fake(schema, { seed: 1 });
+    const b = fake(schema, { seed: 2 });
+    expect(a).not.toEqual(b);
+  });
+
+  test("seed + count is reproducible yet varies element to element", () => {
+    const schema = z.number();
+    const a = fake(schema, { seed: 7, count: 4 });
+    const b = fake(schema, { seed: 7, count: 4 });
+    expect(a).toEqual(b); // reproducible
+    expect(new Set(a).size).toBeGreaterThan(1); // not four copies of one value
+  });
+
+  test("adapter: 'zod' forces the Zod adapter, bypassing detection", () => {
+    const schema = z.object({ id: z.string(), score: z.number().int() });
+    roundTrip(schema as z.ZodTypeAny);
+    faker.seed(0);
+    const value = fake(schema, { adapter: "zod" });
+    expect(() => schema.parse(value)).not.toThrow();
+  });
+});

@@ -33,6 +33,22 @@ const value = fake(z.string());
 z.string().parse(value); // ✓ always passes
 ```
 
+### Options
+
+`fake(schema, options?)` accepts `{ count, seed, adapter }`:
+
+```ts
+fake(schema, { count: 10 }); // → an array of 10 satisfying fakes
+fake(schema, { seed: 123 }); // → deterministic: equal seeds, equal output
+fake(schema, { adapter: "zod" }); // → force the adapter, skip auto-detection
+```
+
+- **`count`** — return an array of N fakes instead of a single value.
+- **`seed`** — seed faker once up front for reproducible output; `seed` + `count`
+  stays reproducible while still varying element to element.
+- **`adapter`** — force a specific adapter, the escape hatch for the rare schema
+  auto-detection can't place.
+
 ## How it works
 
 A three-stage pipeline with a library-agnostic IR as the central seam:

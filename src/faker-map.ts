@@ -21,6 +21,15 @@ export type FakerMap = {
   [K in IRKind]?: (node: Extract<IRNode, { kind: K }>, ctx: GeneratorContext) => unknown;
 };
 
+/**
+ * Seed faker for reproducible output. Lives here so faker-map stays the single
+ * module that imports faker: seeding is a faker concern, even though `fake()`
+ * owns *when* it runs (once, before generating, when a `seed` option is given).
+ */
+export function seedFaker(seed: number): void {
+  faker.seed(seed);
+}
+
 /** Constrain a value to an inclusive `[min, max]` window. */
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);

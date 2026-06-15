@@ -8,21 +8,31 @@
  * constructs are added as new union members here — never by teaching the
  * generator about a particular validator.
  *
- * Covered so far: the scalars (string, number, boolean, date, bigint, literal,
- * enum) and the composites (object, array, tuple, union, optional, nullable).
- * Later slices add constraint fields (lengths, bounds, formats) to the nodes
- * that carry them — the composites stay structural until then.
+ * Covered: the scalars (string, number, boolean, date, bigint, literal, enum)
+ * and the composites (object, array, tuple, union, optional, nullable).
+ *
+ * Constraints travel on the nodes that carry them — string length/format,
+ * number int/bounds, array length — so the generator honors them with zero
+ * library knowledge. Adapters normalize a library's constraints into these
+ * fields; bounds are stored already-inclusive (the generator never reasons
+ * about exclusivity).
  */
 export type IRNode =
-  | { kind: "string" }
-  | { kind: "number" }
+  | {
+      kind: "string";
+      format?: "email" | "url" | "uuid" | "date-iso";
+      minLength?: number;
+      maxLength?: number;
+      length?: number;
+    }
+  | { kind: "number"; int?: boolean; min?: number; max?: number }
   | { kind: "boolean" }
   | { kind: "date" }
   | { kind: "bigint" }
   | { kind: "literal"; value: unknown }
   | { kind: "enum"; values: readonly unknown[] }
   | { kind: "object"; entries: Record<string, IRNode> }
-  | { kind: "array"; element: IRNode }
+  | { kind: "array"; element: IRNode; minLength?: number; maxLength?: number }
   | { kind: "tuple"; elements: IRNode[] }
   | { kind: "union"; options: IRNode[] }
   | { kind: "optional"; inner: IRNode }

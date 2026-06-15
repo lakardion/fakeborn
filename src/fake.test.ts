@@ -184,3 +184,62 @@ describe("fake() — Zod composite types", () => {
     roundTrip(schema);
   });
 });
+
+describe("fake() — Zod constraints & formats", () => {
+  test("bounded strings stay within min/max length and parse", () => {
+    roundTrip(z.string().min(5).max(8));
+    roundTrip(z.string().min(20));
+    roundTrip(z.string().max(3));
+  });
+
+  test("exact-length strings produce that length and parse", () => {
+    const schema = z.string().length(12);
+    roundTrip(schema);
+    faker.seed(0);
+    expect(fake(schema)).toHaveLength(12);
+  });
+
+  test("string formats (email/url/uuid/iso-date) produce parsing values", () => {
+    roundTrip(z.string().email());
+    roundTrip(z.string().url());
+    roundTrip(z.string().uuid());
+    roundTrip(z.string().datetime());
+  });
+
+  test("z.number().int() produces an integer; plain numbers may be floats", () => {
+    const intSchema = z.number().int();
+    roundTrip(intSchema);
+    faker.seed(0);
+    expect(Number.isInteger(fake(intSchema))).toBe(true);
+  });
+
+  test("bounded numbers (min/max, inclusive) stay within bounds and parse", () => {
+    roundTrip(z.number().min(3).max(9));
+    roundTrip(z.number().int().min(-5).max(5));
+    roundTrip(z.number().min(100)); // only a lower bound
+    roundTrip(z.number().max(-100)); // only an upper bound
+  });
+
+  test("positive/negative/nonnegative shorthands stay within bounds and parse", () => {
+    roundTrip(z.number().positive());
+    roundTrip(z.number().negative());
+    roundTrip(z.number().nonnegative());
+    roundTrip(z.number().int().positive());
+  });
+
+  test("bounded arrays produce a valid-length array and parse", () => {
+    roundTrip(z.array(z.number()).min(2).max(4));
+    roundTrip(z.array(z.string()).length(3));
+    roundTrip(z.array(z.boolean()).min(5));
+  });
+
+  test("constraints survive nesting inside an object", () => {
+    const schema = z.object({
+      email: z.string().email(),
+      score: z.number().int().min(0).max(100),
+      tags: z.array(z.string().min(2)).min(1).max(3),
+      createdAt: z.string().datetime(),
+    });
+    roundTrip(schema);
+  });
+});

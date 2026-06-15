@@ -21,10 +21,49 @@ export type FakerMap = {
   [K in IRKind]?: (node: Extract<IRNode, { kind: K }>, ctx: GeneratorContext) => unknown;
 };
 
+/** Constrain a value to an inclusive `[min, max]` window. */
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
 /** The default kind → faker generator table used by `fake()`. */
 export const defaultFakerMap: FakerMap = {
-  string: () => faker.string.sample(),
-  number: () => faker.number.float(),
+  string: (node) => {
+    // A declared format pins the generator; length is honored for plain strings.
+    switch (node.format) {
+      case "email":
+        return faker.internet.email();
+      case "url":
+        return faker.internet.url();
+      case "uuid":
+        return faker.string.uuid();
+      case "date-iso":
+        return faker.date.anytime().toISOString();
+    }
+    const { length, minLength, maxLength } = node;
+    if (length === undefined && minLength === undefined && maxLength === undefined) {
+      return faker.string.sample();
+    }
+    const size =
+      length ?? faker.number.int({ min: minLength ?? 0, max: maxLength ?? (minLength ?? 0) + 10 });
+    return faker.string.alphanumeric(size);
+  },
+  number: (node) => {
+    if (node.int) {
+      const min =
+        node.min !== undefined ? Math.ceil(node.min) : node.max !== undefined ? node.max - 1000 : 0;
+      const max = node.max !== undefined ? Math.floor(node.max) : min + 1000;
+      return clamp(faker.number.int({ min, max: Math.max(min, max) }), min, Math.max(min, max));
+    }
+    if (node.min === undefined && node.max === undefined) {
+      return faker.number.float();
+    }
+    // One side is guaranteed defined here; the unreachable fallbacks keep the
+    // types honest without a cast.
+    const min = node.min ?? (node.max !== undefined ? node.max - 1000 : 0);
+    const max = Math.max(min, node.max ?? min + 1000);
+    return clamp(faker.number.float({ min, max }), min, max);
+  },
   boolean: () => faker.datatype.boolean(),
   date: () => faker.date.anytime(),
   bigint: () => faker.number.bigInt(),
@@ -40,10 +79,12 @@ export const defaultFakerMap: FakerMap = {
     }
     return result;
   },
-  // A small non-empty array when the length is unconstrained (bounds land in a
-  // later slice).
+  // Honor declared length bounds; otherwise a small non-empty array. When only
+  // a min is given, stretch the max to cover it so the window is never empty.
   array: (node, ctx) => {
-    const length = faker.number.int({ min: 1, max: 3 });
+    const min = node.minLength ?? 1;
+    const max = node.maxLength ?? Math.max(min, 3);
+    const length = faker.number.int({ min, max });
     return Array.from({ length }, () => ctx.generate(node.element));
   },
   tuple: (node, ctx) => node.elements.map((element) => ctx.generate(element)),

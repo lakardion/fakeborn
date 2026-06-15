@@ -33,6 +33,19 @@ const adapters: Record<AdapterName, (schema: unknown) => IRNode> = {
 };
 
 /**
+ * `fake()`'s return type. The *presence* of a `count` key on the options type —
+ * not its runtime value — selects the branch: `count` given → an array of fakes,
+ * otherwise a single fake. So `fake(s)` and `fake(s, { seed })` infer a single
+ * value, while `fake(s, { count: n })` infers an array, from one signature with
+ * no overloads.
+ */
+export type FakeResult<TSchema, TOptions extends FakeOptions> = TOptions extends {
+  count: number;
+}
+  ? Infer<TSchema>[]
+  : Infer<TSchema>;
+
+/**
  * Turn a validation schema into a fake value that satisfies it.
  *
  * Pipeline: detect validator (or use the forced `adapter`) → adapter walks the
@@ -41,32 +54,27 @@ const adapters: Record<AdapterName, (schema: unknown) => IRNode> = {
  * is the tested contract; the return type is inferred on a best-effort basis.
  *
  * With `count`, returns an array of that many independently-generated fakes;
- * without it, a single fake. A `seed` is applied once up front, so `seed` +
- * `count` is reproducible yet still varies element to element.
+ * without it, a single fake (see `FakeResult`). A `seed` is applied once up
+ * front, so `seed` + `count` is reproducible yet still varies element to
+ * element. `TOptions` is a `const` type parameter so the literal options at the
+ * call site (`{ count: 3 }`) drive the conditional return type.
  */
-export function fake<TSchema>(
+export function fake<TSchema, const TOptions extends FakeOptions = {}>(
   schema: TSchema,
-  options: FakeOptions & { count: number },
-): Infer<TSchema>[];
-export function fake<TSchema>(schema: TSchema, options?: FakeOptions): Infer<TSchema>;
-export function fake<TSchema>(
-  schema: TSchema,
-  options: FakeOptions = {},
-): Infer<TSchema> | Infer<TSchema>[] {
-  const { count, seed, adapter } = options;
+  options?: TOptions,
+): FakeResult<TSchema, TOptions> {
+  const { count, seed, adapter } = options ?? {};
   if (seed !== undefined) seedFaker(seed);
   const adapterName = adapter ?? detectAdapter(schema);
-  const toIR = adapters[adapterName];
-  const ir = toIR(schema);
+  const ir = adapters[adapterName](schema);
   // The runtime→static boundary. `generate` produces a value the type system
-  // cannot statically tie back to `Infer<TSchema>` (the value is driven by the
-  // IR walked at runtime, not by the type), so these assertions bridge the
-  // dynamic value(s) to the best-effort inferred type. It is the same boundary
-  // Zod crosses when `.parse()` returns its inferred output. The runtime
-  // guarantee — the fake parses through the schema — is the *tested* contract;
-  // these casts carry no safety the round-trip tests don't already defend.
-  if (count === undefined) {
-    return generate(ir) as Infer<TSchema>;
-  }
-  return Array.from({ length: count }, () => generate(ir)) as Infer<TSchema>[];
+  // cannot tie back to `FakeResult` — the shape is driven by the IR walked at
+  // runtime and by whether `count` was passed, not by the type — so this single
+  // assertion bridges the dynamic result to the inferred return type. It is the
+  // same boundary Zod crosses when `.parse()` returns its inferred output; the
+  // runtime guarantee (the fake parses through the schema) is the *tested*
+  // contract, and this cast carries no safety the round-trip tests don't defend.
+  const result: unknown =
+    count === undefined ? generate(ir) : Array.from({ length: count }, () => generate(ir));
+  return result as FakeResult<TSchema, TOptions>;
 }

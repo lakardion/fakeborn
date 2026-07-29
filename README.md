@@ -63,6 +63,24 @@ fake(schema, { adapter: "zod" }); // → force the adapter, skip auto-detection
 - **`adapter`** — force a specific adapter, the escape hatch for the rare schema
   auto-detection can't place.
 
+### Errors
+
+Unsupported constructs and undetectable schemas throw a named
+`UnsupportedSchemaError` (exported from the package) whose message names the
+offending construct:
+
+```ts
+import { fake, UnsupportedSchemaError } from "fakeborn";
+
+try {
+  fake(schema);
+} catch (error) {
+  if (error instanceof UnsupportedSchemaError) {
+    // e.g. fakeborn: unsupported Zod schema "ZodSymbol". Supported so far: …
+  }
+}
+```
+
 ## How it works
 
 A three-stage pipeline with a library-agnostic IR as the central seam:
@@ -91,8 +109,8 @@ validator schema ──[adapter]──▶ IR (normalized node tree) ──[gener
 - **Exclusive numeric bounds** — Zod's exclusive `.gt()`/`.lt()` are normalized to
   inclusive; Valibot's `v.gtValue`/`v.ltValue` are not yet honored.
 - **Less-common containers** — `record`, `map`, `set`, `intersect`, `variant`,
-  etc. (an unsupported construct throws a descriptive error, never a silently
-  invalid fake).
+  etc. (an unsupported construct throws a descriptive `UnsupportedSchemaError`,
+  never a silently invalid fake).
 - **Zod v4 internals** — v1 targets Zod v3.
 
 Type inference (`fake(schema)` returning `z.infer` / `InferOutput`) is best-effort;

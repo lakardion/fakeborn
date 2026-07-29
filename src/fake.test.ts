@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { faker } from "@faker-js/faker";
 import { z } from "zod";
-import { fake } from "./index";
+import { fake, UnsupportedSchemaError } from "./index";
 
 // The project's core contract: a generated fake parses cleanly through its
 // source schema. Each construct is exercised over many re-seeded iterations to
@@ -45,8 +45,22 @@ describe("fake() — Zod string tracer", () => {
     expect(() => fake(z.symbol())).toThrow(/unsupported Zod schema/i);
   });
 
+  test("unsupported Zod construct throws a named UnsupportedSchemaError naming the construct", () => {
+    try {
+      fake(z.symbol());
+      expect.unreachable("fake(z.symbol()) should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(UnsupportedSchemaError);
+      expect((error as Error).message).toMatch(/ZodSymbol/);
+    }
+  });
+
   test("throws a descriptive error when no validator is detected", () => {
     expect(() => fake({} as never)).toThrow(/could not detect/i);
+  });
+
+  test("undetectable schema throws a named UnsupportedSchemaError", () => {
+    expect(() => fake({} as never)).toThrow(UnsupportedSchemaError);
   });
 });
 

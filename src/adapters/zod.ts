@@ -1,4 +1,5 @@
 import { isZodSchema } from "../detect";
+import { UnsupportedSchemaError } from "../errors";
 import type { IRNode } from "../ir";
 
 /**
@@ -228,7 +229,7 @@ export function zodToIR(schema: unknown): IRNode {
       }
       break;
   }
-  throw new Error(
+  throw new UnsupportedSchemaError(
     `fakeborn: unsupported Zod schema "${def?.typeName ?? "unknown"}". ` +
       "Supported so far: string, number, boolean, date, bigint, literal, enum, " +
       "object, array, tuple, union, optional, nullable. More constructs are coming.",

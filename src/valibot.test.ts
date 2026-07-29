@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { faker } from "@faker-js/faker";
 import * as v from "valibot";
-import { fake } from "./index";
+import { fake, UnsupportedSchemaError } from "./index";
 
 // The project's core contract, Valibot edition: a generated fake parses cleanly
 // through its source schema via `v.parse`. Each construct is exercised over many
@@ -32,6 +32,16 @@ describe("fake() — Valibot detection", () => {
     // v.record(...) is out of v1 scope, so it stays a valid "unsupported" probe
     // even as later slices grow the supported set.
     expect(() => fake(v.record(v.string(), v.number()))).toThrow(/unsupported Valibot schema/i);
+  });
+
+  test("unsupported Valibot construct throws a named UnsupportedSchemaError naming the construct", () => {
+    try {
+      fake(v.record(v.string(), v.number()));
+      expect.unreachable("fake(v.record(...)) should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(UnsupportedSchemaError);
+      expect((error as Error).message).toMatch(/record/);
+    }
   });
 });
 

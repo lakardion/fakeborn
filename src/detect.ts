@@ -1,3 +1,5 @@
+import { UnsupportedSchemaError } from "./errors";
+
 /** Validator libraries fakeborn can adapt. */
 export type AdapterName = "zod" | "valibot";
 
@@ -55,7 +57,7 @@ export function isValibotSchema(schema: unknown): schema is ValibotSchemaLike {
 export function detectAdapter(schema: unknown): AdapterName {
   if (isZodSchema(schema)) return "zod";
   if (isValibotSchema(schema)) return "valibot";
-  throw new Error(
+  throw new UnsupportedSchemaError(
     "fakeborn: could not detect a supported validator for the given schema. " +
       "v1 supports Zod and Valibot schemas.",
   );

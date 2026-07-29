@@ -1,8 +1,11 @@
-/** Validator libraries fakeborn can adapt. v1 tracer ships Zod only. */
-export type AdapterName = "zod";
+/** Validator libraries fakeborn can adapt. */
+export type AdapterName = "zod" | "valibot";
 
 /** The minimal structural shape a Zod (v3) schema exposes: `_def.typeName`. */
 export type ZodSchemaLike = { _def: { typeName: string } };
+
+/** The minimal structural shape a Valibot (v1) schema exposes: `kind` + `type`. */
+export type ValibotSchemaLike = { kind: "schema"; type: string };
 
 /**
  * Structural Zod detection. Never imports Zod at runtime — only inspects the
@@ -26,13 +29,34 @@ export function isZodSchema(schema: unknown): schema is ZodSchemaLike {
 }
 
 /**
+ * Structural Valibot detection. Never imports Valibot at runtime — only inspects
+ * the shape of the schema. Valibot (v1) schemas expose `kind === "schema"` and a
+ * string `type` (`"string"`, `"object"`, …); pipe *actions* use `kind` values
+ * like `"validation"`, so anchoring on `kind === "schema"` matches schemas only.
+ *
+ * Returns a type predicate so callers narrow without casting, the same way
+ * `isZodSchema` does — each step is a real runtime check via `in`-narrowing.
+ */
+export function isValibotSchema(schema: unknown): schema is ValibotSchemaLike {
+  if (typeof schema !== "object" || schema === null || !("kind" in schema)) {
+    return false;
+  }
+  if (schema.kind !== "schema" || !("type" in schema)) {
+    return false;
+  }
+  return typeof schema.type === "string";
+}
+
+/**
  * Detect which adapter to use for a schema, by structural inspection only.
- * Throws a descriptive error when no supported validator is recognized.
+ * Runs in order — Zod, then Valibot (their shapes are mutually exclusive) — and
+ * throws a descriptive error when no supported validator is recognized.
  */
 export function detectAdapter(schema: unknown): AdapterName {
   if (isZodSchema(schema)) return "zod";
+  if (isValibotSchema(schema)) return "valibot";
   throw new Error(
     "fakeborn: could not detect a supported validator for the given schema. " +
-      "v1 currently supports Zod schemas (Valibot is coming).",
+      "v1 supports Zod and Valibot schemas.",
   );
 }

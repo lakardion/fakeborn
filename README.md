@@ -7,10 +7,11 @@ hand-maintained description of your data that silently drifts from the schema.
 The contract: **whatever `fake(schema)` returns parses cleanly through that same
 schema's own validator.**
 
-> **Status:** tracer slice. The full pipeline is wired end-to-end and proven on
-> the simplest schema — a Zod `string`. Later slices widen it to numbers,
-> booleans, objects, arrays, unions, …, and add Valibot. See the
-> [PRD](https://github.com/lakardion/fakeborn/issues/1).
+> **Status:** v1. Both adapters are in — **Zod** (v3) and **Valibot** (v1) —
+> covering scalars, composites (object, array, tuple, union, optional, nullable),
+> and the introspectable constraints (string lengths/formats, number int/bounds,
+> array lengths). See the [PRD](https://github.com/lakardion/fakeborn/issues/1)
+> and [Limitations](#limitations).
 
 ## Install
 
@@ -31,6 +32,19 @@ import { fake } from "fakeborn";
 const value = fake(z.string());
 //    ^? string
 z.string().parse(value); // ✓ always passes
+```
+
+Valibot works the same way — the adapter is auto-detected, no config:
+
+```ts
+import * as v from "valibot";
+import { fake } from "fakeborn";
+
+const User = v.object({ id: v.pipe(v.string(), v.uuid()), age: v.pipe(v.number(), v.integer()) });
+
+const user = fake(User);
+//    ^? { id: string; age: number }
+v.parse(User, user); // ✓ always passes
 ```
 
 ### Options
@@ -63,6 +77,27 @@ validator schema ──[adapter]──▶ IR (normalized node tree) ──[gener
 - **IR** — a library-agnostic node tree carrying normalized constraints.
 - **generator + faker map** — walks the IR, mapping each node kind to a faker
   generator. The faker map is an isolated, replaceable unit.
+
+## Limitations
+
+`fakeborn` honors only what a schema *structurally exposes*. v1 deliberately does
+**not** handle:
+
+- **Custom predicates** — Zod `.refine()` / Valibot `v.check()`: opaque functions,
+  not introspectable.
+- **Regex / pattern strings** — `.regex()` / `v.regex()`: would need a
+  regex-to-string generator.
+- **Recursive, lazy, or async schemas** — `z.lazy`, Valibot async.
+- **Exclusive numeric bounds** — Zod's exclusive `.gt()`/`.lt()` are normalized to
+  inclusive; Valibot's `v.gtValue`/`v.ltValue` are not yet honored.
+- **Less-common containers** — `record`, `map`, `set`, `intersect`, `variant`,
+  etc. (an unsupported construct throws a descriptive error, never a silently
+  invalid fake).
+- **Zod v4 internals** — v1 targets Zod v3.
+
+Type inference (`fake(schema)` returning `z.infer` / `InferOutput`) is best-effort;
+the tested guarantee is the **runtime** contract — the fake parses through its
+schema.
 
 ## Develop
 

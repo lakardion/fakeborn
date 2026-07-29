@@ -1,3 +1,4 @@
+import { valibotToIR } from "./adapters/valibot";
 import { zodToIR } from "./adapters/zod";
 import { detectAdapter, type AdapterName } from "./detect";
 import { seedFaker } from "./faker-map";
@@ -5,12 +6,21 @@ import { generate } from "./generator";
 import type { IRNode } from "./ir";
 
 /**
- * Best-effort return-type inference. Zod (v3) schemas carry their output type
- * on the phantom `_output` property (this is exactly what `z.infer` reads). We
- * infer structurally so fakeborn never type-depends on a specific validator
- * version. Falls back to `unknown` for schemas we can't read.
+ * Best-effort return-type inference, read structurally so fakeborn never
+ * type-depends on a specific validator version:
+ * - Zod (v3) carries its output type on the phantom `_output` property (what
+ *   `z.infer` reads).
+ * - Valibot (v1) carries it on the optional, type-only `~types.output` property
+ *   (what `InferOutput = NonNullable<T["~types"]>["output"]` reads).
+ *
+ * Falls back to `unknown` for schemas we can't read. The Zod branch is tried
+ * first; a Valibot schema has no `_output`, so it falls through to its branch.
  */
-export type Infer<TSchema> = TSchema extends { _output: infer O } ? O : unknown;
+export type Infer<TSchema> = TSchema extends { _output: infer O }
+  ? O
+  : TSchema extends { "~types"?: { readonly output: infer O } | undefined }
+    ? O
+    : unknown;
 
 /**
  * Options for `fake()`.
@@ -30,6 +40,7 @@ export type FakeOptions = {
 /** Adapter registry: validator name → (schema → IR) walker. */
 const adapters: Record<AdapterName, (schema: unknown) => IRNode> = {
   zod: zodToIR,
+  valibot: valibotToIR,
 };
 
 /**

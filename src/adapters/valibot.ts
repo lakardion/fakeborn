@@ -1,4 +1,5 @@
 import { isValibotSchema } from "../detect";
+import { UnsupportedSchemaError } from "../errors";
 import type { IRNode } from "../ir";
 
 /**
@@ -212,11 +213,13 @@ export function valibotToIR(schema: unknown): IRNode {
         if ("wrapped" in schema) return { kind: "nullable", inner: valibotToIR(schema.wrapped) };
         break;
     }
-    throw new Error(
+    throw new UnsupportedSchemaError(
       `fakeborn: unsupported Valibot schema "${schema.type}". ` +
         "Supported so far: string, number, boolean, date, bigint, literal, picklist, " +
         "enum, object, array, tuple, union, optional, nullable. More constructs are coming.",
     );
   }
-  throw new Error("fakeborn: expected a Valibot schema (an object with kind: 'schema').");
+  throw new UnsupportedSchemaError(
+    "fakeborn: expected a Valibot schema (an object with kind: 'schema').",
+  );
 }

@@ -20,9 +20,8 @@ export default defineConfig({
       ],
       customCss: ["./src/styles/global.css"],
       logo: {
-        light: "./src/assets/fakeborn.svg",
-        dark: "./src/assets/fakeborn-dark.svg",
-        replacesTitle: true,
+        light: "./src/assets/fakeborn-mark.svg",
+        dark: "./src/assets/fakeborn-mark-dark.svg",
       },
       // Sidebar slugs are site-root-relative — Starlight prepends `base`
       // (/fakeborn) itself. Do NOT bake the base into these slugs.

@@ -1,0 +1,94 @@
+---
+title: Options
+description: count, seed, adapter — plus UnsupportedSchemaError and when it throws.
+---
+
+`fake(schema, options?)` accepts three options:
+
+```ts
+fake(schema, { count: 10 }); // → an array of 10 satisfying fakes
+fake(schema, { seed: 123 }); // → deterministic: equal seeds, equal output
+fake(schema, { adapter: "zod" }); // → force the adapter, skip auto-detection
+```
+
+## `count` — batch generation
+
+Return an array of N fakes instead of a single value. Each element is
+generated independently — not N copies of one value:
+
+```ts
+const schema = z.object({ id: z.string(), n: z.number() });
+
+const values = fake(schema, { count: 5 });
+// → 5 distinct objects, each satisfying the schema
+
+fake(z.string(), { count: 0 }); // → []
+```
+
+The return type follows the option: with `count` you get `T[]`, without it a
+single `T`.
+
+## `seed` — determinism
+
+Seed faker once up front for reproducible output. Equal seeds yield equal
+results — across calls, and across a whole `count` batch:
+
+```ts
+const a = fake(schema, { seed: 123 });
+const b = fake(schema, { seed: 123 });
+// a and b are deeply equal
+
+fake(schema, { seed: 7, count: 4 });
+// → reproducible run to run, yet the 4 elements still vary from each other
+```
+
+Different seeds produce different output. Seeding is per-call: pass the seed
+every time you want reproducibility.
+
+## `adapter` — force a validator
+
+fakeborn auto-detects which validator a schema came from by structural
+inspection (Zod first, then Valibot — their shapes are mutually exclusive), so
+`adapter` is rarely needed. It's the escape hatch for the rare schema detection
+can't place:
+
+```ts
+fake(schema, { adapter: "zod" });
+fake(schema, { adapter: "valibot" });
+```
+
+## `UnsupportedSchemaError`
+
+fakeborn never returns a silently invalid fake for a construct it can't handle
+— it throws a named `UnsupportedSchemaError` (exported from the package) whose
+message names the offending construct. It throws when:
+
+- **A schema uses an unsupported construct** — e.g. `z.symbol()`, `z.record()`,
+  `v.variant()`:
+
+  ```
+  fakeborn: unsupported Zod schema "ZodSymbol". Supported so far: string,
+  number, boolean, date, bigint, literal, enum, object, array, tuple, union,
+  optional, nullable. More constructs are coming.
+  ```
+
+- **No validator is detected** — the value isn't a Zod or Valibot schema:
+
+  ```
+  fakeborn: could not detect a supported validator for the given schema. v1
+  supports Zod and Valibot schemas.
+  ```
+
+```ts
+import { fake, UnsupportedSchemaError } from "fakeborn";
+
+try {
+  fake(schema);
+} catch (error) {
+  if (error instanceof UnsupportedSchemaError) {
+    // error.message names the unsupported construct
+  }
+}
+```
+
+See [Limitations](/fakeborn/limitations/) for the full unsupported set.

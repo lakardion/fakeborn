@@ -1,0 +1,108 @@
+---
+title: Constraints & formats
+description: Which schema constraints fakeborn honors — lengths, formats, bounds — and which it ignores.
+---
+
+fakeborn honors every constraint a schema **structurally exposes** — the checks
+it can read off the schema and feed to faker. This page lists what's honored
+and what isn't.
+
+## String lengths
+
+`.min(n)`, `.max(n)`, and `.length(n)` bound the generated string:
+
+```ts
+import { z } from "zod";
+import { fake } from "fakeborn";
+
+fake(z.string().min(5).max(8)); // → 5–8 characters
+fake(z.string().length(12)); // → exactly 12 characters
+fake(z.string().min(20)); // → at least 20 characters
+```
+
+## String formats
+
+A declared format pins the generator to matching faker data:
+
+| Zod                     | Valibot                                | Generated with         |
+| ----------------------- | -------------------------------------- | ---------------------- |
+| `z.string().email()`    | `v.pipe(v.string(), v.email())`        | `faker.internet.email` |
+| `z.string().url()`      | `v.pipe(v.string(), v.url())`          | `faker.internet.url`   |
+| `z.string().uuid()`     | `v.pipe(v.string(), v.uuid())`         | `faker.string.uuid`    |
+| `z.string().datetime()` | `v.pipe(v.string(), v.isoTimestamp())` | an ISO date string     |
+
+```ts
+fake(z.string().email()); // → a syntactically valid email address
+fake(v.pipe(v.string(), v.uuid())); // → a valid UUID
+```
+
+:::note
+A format pins the generator. Length bounds stacked onto a _formatted_ string
+(`z.string().email().min(50)`) don't apply — the format wins.
+:::
+
+## Number bounds
+
+`.int()`, `.min(n)`, `.max(n)` are honored, including one-sided bounds:
+
+```ts
+fake(z.number().int()); // → an integer
+fake(z.number().min(3).max(9)); // → a float in [3, 9]
+fake(z.number().int().min(-5).max(5)); // → an integer in [-5, 5]
+fake(z.number().min(100)); // → at least 100
+```
+
+**Exclusive bounds are normalized to inclusive.** Zod's `.gt()` / `.lt()` — and
+the `.positive()` / `.negative()` / `.nonnegative()` shorthands built on them —
+are honored by nudging the bound to the nearest satisfying value (±1 for
+integers, a tiny step for floats), so the fake always parses:
+
+```ts
+fake(z.number().positive()); // → > 0, always parses
+fake(z.number().int().positive()); // → ≥ 1
+```
+
+## Array lengths
+
+`.min(n)`, `.max(n)`, and `.length(n)` bound the array's size; an exact length
+pins both sides:
+
+```ts
+fake(z.array(z.number()).min(2).max(4)); // → 2–4 elements
+fake(z.array(z.string()).length(3)); // → exactly 3 elements
+fake(z.array(z.boolean()).min(5)); // → at least 5 elements
+```
+
+## Constraints survive nesting
+
+Constraints are carried through composites to arbitrary depth:
+
+```ts
+const schema = z.object({
+  email: z.string().email(),
+  score: z.number().int().min(0).max(100),
+  tags: z.array(z.string().min(2)).min(1).max(3),
+  createdAt: z.string().datetime(),
+});
+
+schema.parse(fake(schema)); // ✓ always passes
+```
+
+## What fakeborn ignores
+
+Some constraints are **opaque** — functions or patterns fakeborn can't
+introspect:
+
+- **Regex patterns** — `.regex()` / `v.regex()`: ignored. The fake is a valid
+  string for everything else on the schema, but it may not match the pattern.
+- **Custom predicates** — Valibot's `v.check()`: ignored, for the same reason.
+
+Zod's `.refine()` / `.superRefine()` are the exception: they wrap the schema in
+a `ZodEffects` node, which fakeborn rejects loudly with an
+`UnsupportedSchemaError` rather than risk a silently invalid fake.
+
+:::caution
+If your schema relies on a regex or a custom predicate for correctness, don't
+assume the fake satisfies it. See [Limitations](/fakeborn/limitations/) for the full
+list.
+:::

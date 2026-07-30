@@ -1,0 +1,29 @@
+---
+title: Getting Started
+description: Install fakeborn and generate your first schema-born fake value.
+---
+
+:::note[Work in progress]
+This page is a placeholder — full documentation content is being written.
+:::
+
+## Installation
+
+```sh
+bun add fakeborn
+```
+
+## Usage
+
+```ts
+import { z } from "zod";
+import { fake } from "fakeborn";
+
+const schema = z.object({
+  name: z.string(),
+  email: z.string().email(),
+});
+
+const value = fake(schema);
+// → { name: "…", email: "…" } — always satisfies `schema`
+```

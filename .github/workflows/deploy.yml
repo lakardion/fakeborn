@@ -1,0 +1,46 @@
+name: Deploy docs to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/fakeborn/**"
+      - "apps/docs/**"
+      - "bun.lock"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Cancel superseded runs; required so a stale run can't overwrite a newer deploy
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install, build, and upload docs site
+        uses: withastro/action@v6
+        with:
+          path: . # repo root: bun.lock lives here, so package-manager auto-detects as bun
+          package-manager: bun@latest # explicit: skips lockfile sniffing entirely
+          # The lib build is a hard precondition: workspace:* resolves through
+          # packages/fakeborn's exports → ./dist/*, which doesn't exist on fresh clones.
+          build-cmd: bun run --filter fakeborn build && bun run --filter docs build
+          out-dir: apps/docs/dist # relative to `path`
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

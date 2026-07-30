@@ -1,0 +1,29 @@
+---
+title: fakeborn
+description: Generate fake data born from your validation schema.
+template: splash
+hero:
+  tagline: Generate fake data born from your validation schema — pass a validator (Zod, Valibot) to fake() and get a value that satisfies it.
+  actions:
+    - text: Get started
+      link: /fakeborn/getting-started/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/lakardion/fakeborn
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+<CardGrid stagger>
+  <Card title="Schema-first" icon="pencil">
+    Your Zod or Valibot schema is the single source of truth — the fake data always satisfies it.
+  </Card>
+  <Card title="Deterministic" icon="random">
+    Seedable generation: same schema, same seed, same data.
+  </Card>
+  <Card title="Faker-powered" icon="star">
+    Built on @faker-js/faker, with schema constraints and formats mapped to the right faker calls.
+  </Card>
+</CardGrid>

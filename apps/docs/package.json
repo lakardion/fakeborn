@@ -10,8 +10,11 @@
   },
   "dependencies": {
     "@astrojs/starlight": "^0.41.5",
+    "@astrojs/starlight-tailwind": "^5.0.0",
+    "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.1.6",
     "fakeborn": "workspace:*",
-    "sharp": "^0.35.3"
+    "sharp": "^0.35.3",
+    "tailwindcss": "^4.3.3"
   }
 }

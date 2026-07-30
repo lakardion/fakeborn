@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import tailwindcss from "@tailwindcss/vite";
 
 // https://astro.build/config
 export default defineConfig({
@@ -17,7 +18,7 @@ export default defineConfig({
           href: "https://github.com/lakardion/fakeborn",
         },
       ],
-      customCss: ["./src/styles/nord.css"],
+      customCss: ["./src/styles/global.css"],
       // Sidebar slugs are site-root-relative — Starlight prepends `base`
       // (/fakeborn) itself. Do NOT bake the base into these slugs.
       sidebar: [
@@ -28,4 +29,7 @@ export default defineConfig({
       ],
     }),
   ],
+  vite: {
+    plugins: [tailwindcss()],
+  },
 });

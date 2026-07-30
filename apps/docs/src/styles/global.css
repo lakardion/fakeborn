@@ -1,0 +1,131 @@
+/*
+ * Nord-themed Tailwind v4 setup for Starlight — https://www.nordtheme.com
+ *
+ * Structure (official Starlight + Tailwind v4 recipe):
+ *   1. Cascade layer order: Tailwind's base runs *before* Starlight's styles,
+ *      theme/utilities run after. No Preflight is imported — the
+ *      starlight-tailwind compat package restores the essential bits only.
+ *   2. `@theme` is the single source of truth: the Nord palette
+ *      (--color-nord-*, --color-aurora-*) plus the --color-gray-* and
+ *      --color-accent-* scales that @astrojs/starlight-tailwind wires into
+ *      Starlight's design tokens. All values double as Tailwind utilities
+ *      (bg-nord-0, text-accent-400, …) for custom pages and the playground.
+ *   3. The unlayered overrides at the bottom cover what the compat package
+ *      doesn't wire: per-theme accent tuning and the aurora semantic
+ *      highlights (asides/badges).
+ */
+
+@layer base, starlight, theme, components, utilities;
+
+@import "@astrojs/starlight-tailwind";
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@theme {
+  /* ── Nord palette (raw) ─────────────────────────────────────────── */
+  /* Polar Night */
+  --color-nord-0: #2e3440;
+  --color-nord-1: #3b4252;
+  --color-nord-2: #434c5e;
+  --color-nord-3: #4c566a;
+  /* Snow Storm */
+  --color-nord-4: #d8dee9;
+  --color-nord-5: #e5e9f0;
+  --color-nord-6: #eceff4;
+  /* Frost */
+  --color-nord-7: #8fbcbb;
+  --color-nord-8: #88c0d0;
+  --color-nord-9: #81a1c1;
+  --color-nord-10: #5e81ac;
+  /* Aurora */
+  --color-aurora-red: #bf616a;
+  --color-aurora-orange: #d08770;
+  --color-aurora-yellow: #ebcb8b;
+  --color-aurora-green: #a3be8c;
+  --color-aurora-purple: #b48ead;
+
+  /*
+   * Gray scale — drives Starlight backgrounds, text, and borders in both
+   * themes (dark bg = gray-900, light bg = white; dark text = gray-200/300,
+   * light text = gray-700/800). Intermediate steps are Nord blends.
+   */
+  --color-white: var(--color-nord-6);
+  --color-gray-50: var(--color-nord-5);
+  --color-gray-100: #dbe1eb;
+  --color-gray-200: var(--color-nord-4);
+  --color-gray-300: #aeb5c3;
+  --color-gray-400: #848c9d;
+  --color-gray-500: #5d6779;
+  --color-gray-600: var(--color-nord-3);
+  --color-gray-700: var(--color-nord-2);
+  --color-gray-800: var(--color-nord-1);
+  --color-gray-900: var(--color-nord-0);
+  --color-gray-950: #242933;
+  --color-black: var(--color-nord-0);
+
+  /*
+   * Accent scale — Frost blues. The compat package uses accent-600 for
+   * links/accents, accent-200/950 (dark) and accent-200/900 (light) for the
+   * high/low variants; the per-theme overrides below retune accent itself.
+   */
+  --color-accent-50: #f0f6f8;
+  --color-accent-100: #d9eaf0;
+  --color-accent-200: #c2dde7;
+  --color-accent-300: #a5cfde;
+  --color-accent-400: var(--color-nord-8);
+  --color-accent-500: #74a5c0;
+  --color-accent-600: var(--color-nord-9);
+  --color-accent-700: var(--color-nord-10);
+  --color-accent-800: #4d6686;
+  --color-accent-900: #445771;
+  --color-accent-950: #3a475b;
+}
+
+/*
+ * Starlight token overrides beyond the compat wiring.
+ * Unlayered on purpose: beats the compat package's @layer utilities rules.
+ */
+
+/* Dark theme (default): brighter frost accent (nord9 ≈ 4.5:1, nord8 ≈ 6.2:1 on nord0). */
+:root {
+  --sl-color-accent: var(--color-accent-400);
+
+  /* Aurora semantic highlights (asides, badges) */
+  --sl-color-orange-low: color-mix(in srgb, var(--color-aurora-orange) 25%, var(--color-nord-0));
+  --sl-color-orange: var(--color-aurora-orange);
+  --sl-color-orange-high: color-mix(in srgb, var(--color-aurora-orange) 55%, var(--color-nord-6));
+  --sl-color-green-low: color-mix(in srgb, var(--color-aurora-green) 25%, var(--color-nord-0));
+  --sl-color-green: var(--color-aurora-green);
+  --sl-color-green-high: color-mix(in srgb, var(--color-aurora-green) 55%, var(--color-nord-6));
+  --sl-color-blue-low: color-mix(in srgb, var(--color-nord-9) 25%, var(--color-nord-0));
+  --sl-color-blue: var(--color-nord-9);
+  --sl-color-blue-high: color-mix(in srgb, var(--color-nord-9) 55%, var(--color-nord-6));
+  --sl-color-purple-low: color-mix(in srgb, var(--color-aurora-purple) 25%, var(--color-nord-0));
+  --sl-color-purple: var(--color-aurora-purple);
+  --sl-color-purple-high: color-mix(in srgb, var(--color-aurora-purple) 55%, var(--color-nord-6));
+  --sl-color-red-low: color-mix(in srgb, var(--color-aurora-red) 25%, var(--color-nord-0));
+  --sl-color-red: var(--color-aurora-red);
+  --sl-color-red-high: color-mix(in srgb, var(--color-aurora-red) 55%, var(--color-nord-6));
+}
+
+/* Light theme: darken the accent — raw frost blues fail 4.5:1 on snow storm backgrounds. */
+:root[data-theme="light"] {
+  --sl-color-accent: var(--color-accent-800); /* ≈ 5.2:1 on nord6 */
+
+  /* Aurora highlights — darkened variants for light backgrounds */
+  --sl-color-orange-low: color-mix(in srgb, var(--color-aurora-orange) 25%, var(--color-nord-6));
+  --sl-color-orange: color-mix(in srgb, var(--color-aurora-orange) 70%, var(--color-nord-0));
+  --sl-color-orange-high: color-mix(in srgb, var(--color-aurora-orange) 60%, var(--color-nord-0));
+  --sl-color-green-low: color-mix(in srgb, var(--color-aurora-green) 25%, var(--color-nord-6));
+  --sl-color-green: color-mix(in srgb, var(--color-aurora-green) 65%, var(--color-nord-0));
+  --sl-color-green-high: color-mix(in srgb, var(--color-aurora-green) 55%, var(--color-nord-0));
+  --sl-color-blue-low: color-mix(in srgb, var(--color-nord-9) 25%, var(--color-nord-6));
+  --sl-color-blue: var(--color-nord-10);
+  --sl-color-blue-high: color-mix(in srgb, var(--color-nord-10) 80%, var(--color-nord-0));
+  --sl-color-purple-low: color-mix(in srgb, var(--color-aurora-purple) 25%, var(--color-nord-6));
+  --sl-color-purple: color-mix(in srgb, var(--color-aurora-purple) 75%, var(--color-nord-0));
+  --sl-color-purple-high: color-mix(in srgb, var(--color-aurora-purple) 65%, var(--color-nord-0));
+  --sl-color-red-low: color-mix(in srgb, var(--color-aurora-red) 25%, var(--color-nord-6));
+  --sl-color-red: var(--color-aurora-red);
+  --sl-color-red-high: color-mix(in srgb, var(--color-aurora-red) 70%, var(--color-nord-0));
+}

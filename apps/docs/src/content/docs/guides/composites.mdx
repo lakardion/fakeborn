@@ -1,0 +1,105 @@
+---
+title: Composites
+description: Object, array, tuple, union, optional, nullable — and how they nest.
+---
+
+Composite schemas are faked recursively: fakeborn walks each child schema and
+generates a value for it, so nesting works to arbitrary depth.
+
+## Object
+
+Every declared key is populated — a "full" fake:
+
+```ts
+import { z } from "zod";
+import { fake } from "fakeborn";
+
+const User = z.object({
+  name: z.string(),
+  age: z.number(),
+  active: z.boolean(),
+});
+
+fake(User);
+// → { name: "…", age: 42.5, active: true } — every key present
+```
+
+Nested objects recurse to depth:
+
+```ts
+const schema = z.object({
+  id: z.string(),
+  profile: z.object({
+    email: z.string(),
+    meta: z.object({ score: z.number(), label: z.literal("inner") }),
+  }),
+});
+
+const value = fake(schema);
+value.profile.meta.label; // → "inner"
+```
+
+## Array
+
+Each element is generated independently. With no length constraints you get a
+small **non-empty** array (1–3 elements); declared bounds are honored — see
+[Constraints & formats](/fakeborn/guides/constraints-and-formats/).
+
+```ts
+fake(z.array(z.number())); // → e.g. [1.5, -999.2] — never empty
+fake(z.array(z.string()).min(2).max(4)); // → 2 to 4 strings
+```
+
+## Tuple
+
+Each position satisfies its own element type, at the exact declared length:
+
+```ts
+const Coords = z.tuple([z.number(), z.number()]);
+fake(Coords); // → [number, number]
+```
+
+## Union
+
+One option is picked at random, then faked:
+
+```ts
+const Id = z.union([z.string(), z.number()]);
+fake(Id); // → either a string or a number — always one of the options
+```
+
+## Optional & nullable
+
+fakeborn produces **present** values by default: an optional field gets a valid
+value (never `undefined`), a nullable field gets a valid non-null value (never
+`null`). The result is a "full" fake that obviously satisfies the schema.
+
+```ts
+const schema = z.object({
+  nickname: z.string().optional(),
+  deletedAt: z.date().nullable(),
+});
+
+const value = fake(schema);
+value.nickname; // → a string (present, not undefined)
+value.deletedAt; // → a Date (present, not null)
+```
+
+## Putting it together
+
+Every construct composes. This realistic schema round-trips through the lib's
+own test suite:
+
+```ts
+const schema = z.object({
+  id: z.string(),
+  tags: z.array(z.string()),
+  role: z.enum(["admin", "user", "guest"]),
+  nickname: z.string().optional(),
+  deletedAt: z.date().nullable(),
+  coords: z.tuple([z.number(), z.number()]),
+  kind: z.union([z.literal("a"), z.literal("b")]),
+});
+
+schema.parse(fake(schema)); // ✓ always passes
+```

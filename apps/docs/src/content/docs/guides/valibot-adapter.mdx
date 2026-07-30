@@ -1,0 +1,83 @@
+---
+title: Valibot adapter
+description: Auto-detection, the explicit adapter escape hatch, and constraint parity with Zod.
+---
+
+fakeborn supports Valibot (v1) at full parity with Zod: the same scalars, the
+same composites, the same introspectable constraints. No configuration is
+needed — the adapter is auto-detected.
+
+```ts
+import * as v from "valibot";
+import { fake } from "fakeborn";
+
+const User = v.object({
+  id: v.pipe(v.string(), v.uuid()),
+  age: v.pipe(v.number(), v.integer()),
+});
+
+const user = fake(User);
+//    ^? { id: string; age: number }
+v.parse(User, user); // ✓ always passes
+```
+
+## Auto-detection
+
+fakeborn never imports your validator. It detects the library **structurally**:
+
+- A Zod (v3) schema exposes `_def.typeName` (`"ZodString"`, `"ZodObject"`, …).
+- A Valibot (v1) schema exposes `kind: "schema"` plus a string `type`
+  (`"string"`, `"object"`, …).
+
+Detection checks Zod first, then Valibot — the shapes are mutually exclusive,
+so the order can't misfire. When nothing matches, `fake()` throws an
+`UnsupportedSchemaError`.
+
+## The explicit escape hatch
+
+For the rare schema auto-detection can't place, force the adapter:
+
+```ts
+fake(User, { adapter: "valibot" });
+```
+
+## Constraint parity
+
+Valibot expresses constraints as **pipe actions** — `v.pipe(schema, ...actions)`.
+fakeborn reads the same constraint set as Zod's checks:
+
+| Zod                                           | Valibot                                             |
+| --------------------------------------------- | --------------------------------------------------- |
+| `.min(n)` / `.max(n)` / `.length(n)` (string) | `v.minLength(n)` / `v.maxLength(n)` / `v.length(n)` |
+| `.email()` / `.url()` / `.uuid()`             | `v.email()` / `v.url()` / `v.uuid()`                |
+| `.datetime()`                                 | `v.isoTimestamp()`                                  |
+| `.int()`                                      | `v.integer()`                                       |
+| `.min(n)` / `.max(n)` (number)                | `v.minValue(n)` / `v.maxValue(n)`                   |
+| `.min(n)` / `.max(n)` / `.length(n)` (array)  | `v.minLength(n)` / `v.maxLength(n)` / `v.length(n)` |
+
+```ts
+const schema = v.object({
+  email: v.pipe(v.string(), v.email()),
+  score: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(100)),
+  tags: v.pipe(v.array(v.pipe(v.string(), v.minLength(2))), v.minLength(1), v.maxLength(3)),
+  createdAt: v.pipe(v.string(), v.isoTimestamp()),
+});
+
+v.parse(schema, fake(schema)); // ✓ always passes
+```
+
+Two Valibot-specific notes:
+
+- **`v.minValue` / `v.maxValue` are inclusive**, so they map straight onto the
+  honored bounds — no normalization needed. The exclusive `v.gtValue` /
+  `v.ltValue` are **not honored** in v1 (see [Limitations](/fakeborn/limitations/)).
+- **`v.picklist([...])` and `v.enum({...})` both work** like Zod's enum: the
+  fake is one of the declared members. Custom predicates via `v.check()` are
+  opaque and ignored — see
+  [Constraints & formats](/fakeborn/guides/constraints-and-formats/).
+
+## Types
+
+`fake()`'s return type is inferred from the schema — Valibot's `InferOutput` —
+on a best-effort basis. The tested guarantee is the **runtime** contract: the
+fake parses through its schema.

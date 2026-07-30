@@ -1,0 +1,98 @@
+---
+title: API reference
+description: fake() — the single public function, end to end.
+---
+
+fakeborn's public API is one function:
+
+```ts
+import { fake } from "fakeborn";
+```
+
+## `fake(schema, options?)`
+
+Turns a validation schema into a fake value that satisfies it. Pipeline: detect
+the validator (or use the forced `adapter`) → walk the schema into a
+library-agnostic IR → generate a value with faker.
+
+```ts
+function fake<TSchema, const TOptions extends FakeOptions = {}>(
+  schema: TSchema,
+  options?: TOptions,
+): FakeResult<TSchema, TOptions>;
+```
+
+- **`schema`** — a Zod (v3) or Valibot (v1) schema. Detected structurally;
+  fakeborn never imports your validator.
+- **`options`** — optional [`FakeOptions`](#fakeoptions).
+- **returns** — a value that parses cleanly through `schema`'s own validator.
+  With `count`, an array of independently generated values.
+
+```ts
+import { z } from "zod";
+import { fake } from "fakeborn";
+
+const User = z.object({ id: z.string().uuid(), age: z.number().int().min(18) });
+
+const user = fake(User);
+User.parse(user); // ✓ the tested contract: always passes
+```
+
+## `FakeOptions`
+
+```ts
+type FakeOptions = {
+  count?: number;
+  seed?: number;
+  adapter?: "zod" | "valibot";
+};
+```
+
+| Option    | Type                 | Effect                                                                               |
+| --------- | -------------------- | ------------------------------------------------------------------------------------ |
+| `count`   | `number`             | Return an array of N fakes instead of a single value. `count: 0` returns `[]`.       |
+| `seed`    | `number`             | Seed faker once up front: equal seeds, equal output — reproducible across a batch.   |
+| `adapter` | `"zod" \| "valibot"` | Force the adapter, bypassing auto-detection. The escape hatch for ambiguous schemas. |
+
+See the [Options guide](/fakeborn/guides/options/) for examples.
+
+## Return type
+
+`FakeResult<TSchema, TOptions>` is conditional on the _presence_ of `count`:
+
+- `fake(schema)` and `fake(schema, { seed })` → a single `Infer<TSchema>`
+- `fake(schema, { count: n })` → `Infer<TSchema>[]`
+
+`Infer<TSchema>` reads the schema's output type structurally — `z.infer` for
+Zod, `InferOutput` for Valibot — on a best-effort basis, falling back to
+`unknown`. The tested guarantee is the **runtime** contract: the fake parses
+through its schema. No overloads — the literal options at the call site drive
+the conditional type.
+
+## `UnsupportedSchemaError`
+
+```ts
+import { UnsupportedSchemaError } from "fakeborn";
+```
+
+Thrown when `fake()` is handed a schema it cannot satisfy: an unsupported
+construct (named in the message) or a value no adapter detects. Extends
+`Error`; catch it with `instanceof`:
+
+```ts
+try {
+  fake(schema);
+} catch (error) {
+  if (error instanceof UnsupportedSchemaError) {
+    // error.message names the unsupported construct
+  }
+}
+```
+
+## Supporting exports
+
+For completeness, the package also exports the pieces of its pipeline —
+`detectAdapter`, `isZodSchema`, `isValibotSchema`, the `IRNode` / `IRKind`
+types, `generate`, and the `defaultFakerMap` / `FakerMap` types. These are the
+internal seams (detection, IR, generator), exported for advanced use; `fake()`
+covers the documented workflow.

@@ -1,29 +1,79 @@
 ---
 title: Getting Started
-description: Install fakeborn and generate your first schema-born fake value.
+description: Install fakeborn and generate your first schema-born fake value in 30 seconds.
 ---
 
-:::note[Work in progress]
-This page is a placeholder — full documentation content is being written.
-:::
+fakeborn generates fakes **born from** a validator. Pass it a validation schema
+you already wrote — Zod or Valibot — and get back a value that satisfies it. No
+second, hand-maintained description of your data that silently drifts from the
+schema.
 
-## Installation
+**The contract:** whatever `fake(schema)` returns parses cleanly through that
+same schema's own validator.
+
+## Install
 
 ```sh
-bun add fakeborn
+bun add fakeborn        # or: npm install fakeborn / pnpm add fakeborn
 ```
 
-## Usage
+You'll also want the validator you're already using — `zod` (v3) or `valibot`
+(v1). fakeborn's only runtime dependency is
+[`@faker-js/faker`](https://fakerjs.dev): it introspects schemas _structurally_
+and never imports your validator, so it isn't locked to a specific release of
+either library.
+
+## Your first fake
 
 ```ts
 import { z } from "zod";
 import { fake } from "fakeborn";
 
-const schema = z.object({
+const User = z.object({
+  id: z.string().uuid(),
   name: z.string(),
-  email: z.string().email(),
+  age: z.number().int().min(18),
 });
 
-const value = fake(schema);
-// → { name: "…", email: "…" } — always satisfies `schema`
+const user = fake(User);
+//    ^? { id: string; name: string; age: number }
+
+User.parse(user); // ✓ always passes
 ```
+
+That's the whole workflow: one function, one schema, a satisfying value.
+
+Valibot works the same way — the adapter is auto-detected, no config:
+
+```ts
+import * as v from "valibot";
+import { fake } from "fakeborn";
+
+const User = v.object({
+  id: v.pipe(v.string(), v.uuid()),
+  age: v.pipe(v.number(), v.integer()),
+});
+
+const user = fake(User);
+v.parse(User, user); // ✓ always passes
+```
+
+## A taste of options
+
+```ts
+fake(User, { count: 10 }); // → an array of 10 satisfying fakes
+fake(User, { seed: 123 }); // → deterministic: equal seeds, equal output
+```
+
+## Where next
+
+- **[Guides](/fakeborn/guides/scalars/)** — what fakeborn generates for every scalar,
+  how composites nest, which constraints and formats it honors, and the full
+  options set.
+- **[API reference](/fakeborn/api/)** — the single public function `fake()`, end to end.
+- **[Limitations](/fakeborn/limitations/)** — what v1 deliberately doesn't handle.
+
+:::tip[Try it in the browser]
+An interactive playground — live editor, seeded with preset schemas — is on its
+way.
+:::

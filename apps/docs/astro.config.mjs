@@ -19,13 +19,26 @@ export default defineConfig({
         },
       ],
       customCss: ["./src/styles/global.css"],
+      logo: {
+        light: "./src/assets/fakeborn-mark.svg",
+        dark: "./src/assets/fakeborn-mark-dark.svg",
+      },
       // Sidebar slugs are site-root-relative — Starlight prepends `base`
       // (/fakeborn) itself. Do NOT bake the base into these slugs.
       sidebar: [
+        { slug: "getting-started" },
         {
-          label: "Start Here",
-          items: [{ slug: "getting-started" }],
+          label: "Guides",
+          items: [
+            { slug: "guides/scalars" },
+            { slug: "guides/composites" },
+            { slug: "guides/constraints-and-formats" },
+            { slug: "guides/options" },
+            { slug: "guides/valibot-adapter" },
+          ],
         },
+        { slug: "api" },
+        { slug: "limitations" },
       ],
     }),
   ],

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 520" width="100%" height="100%">
+  <style>
+    .bg { fill: transparent; }
+    .wireframe { stroke: #124E5B; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+    .mask-fill { fill: #124E5B; stroke: #124E5B; stroke-width: 2.5; stroke-linejoin: round; }
+    .feature-cutout { fill: #FFFFFF; }
+    .brand-text { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-weight: 700; font-size: 44px; fill: #1E293B; letter-spacing: -0.5px; }
+  </style>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" class="bg"/>
+
+  <!-- Logo Mark -->
+  <g transform="translate(0, 10)">
+    <!-- Central Persona Mask -->
+    <path class="mask-fill" d="M 250,135 L 298,180 L 298,255 L 282,310 L 250,335 L 218,310 L 202,255 L 202,180 Z" />
+    
+    <!-- Eyes Cutouts -->
+    <path class="feature-cutout" d="M 220,215 Q 235,205 244,218 Q 235,225 220,215 Z" />
+    <path class="feature-cutout" d="M 256,218 Q 265,205 280,215 Q 265,225 256,218 Z" />
+    
+    <!-- Mouth Cutout -->
+    <path class="feature-cutout" d="M 233,275 Q 250,287 267,275 Q 250,279 233,275 Z" />
+    
+    <!-- Geometric Egg Outer Facets -->
+    <path class="wireframe" d="M 250,55 L 205,90 L 250,135 L 295,90 Z" />
+    <path class="wireframe" d="M 205,90 L 165,145 L 202,180" />
+    <path class="wireframe" d="M 295,90 L 335,145 L 298,180" />
+    <path class="wireframe" d="M 165,145 L 140,230 L 202,255" />
+    <path class="wireframe" d="M 335,145 L 360,230 L 298,255" />
+    <path class="wireframe" d="M 140,230 L 165,315 L 218,310" />
+    <path class="wireframe" d="M 360,230 L 335,315 L 282,310" />
+    <path class="wireframe" d="M 165,315 L 250,375 L 218,310" />
+    <path class="wireframe" d="M 335,315 L 250,375 L 282,310" />
+    <path class="wireframe" d="M 250,375 L 250,335" />
+    <path class="wireframe" d="M 250,55 L 250,135" />
+    
+    <!-- Inner Cross Structure -->
+    <path class="wireframe" d="M 205,90 L 165,145 M 295,90 L 335,145" />
+    <path class="wireframe" d="M 165,145 L 202,255 M 335,145 L 298,255" />
+    <path class="wireframe" d="M 140,230 L 218,310 M 360,230 L 282,310" />
+  </g>
+
+  <!-- Typography -->
+  <text x="250" y="455" text-anchor="middle" class="brand-text">fakeborn</text>
+</svg>

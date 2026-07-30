@@ -1,0 +1,34 @@
+---
+title: Limitations
+description: What fakeborn v1 deliberately doesn't handle.
+---
+
+{/* Keep in sync with the Limitations section of packages/fakeborn/README.md — the README is the source of truth. */}
+
+fakeborn honors only what a schema **structurally exposes**. v1 deliberately
+does **not** handle:
+
+- **Custom predicates** — Zod `.refine()` / Valibot `v.check()`: opaque
+  functions, not introspectable. (Zod's `.refine()` wraps the schema and throws
+  `UnsupportedSchemaError`; Valibot's `v.check()` is silently ignored.)
+- **Regex / pattern strings** — `.regex()` / `v.regex()`: would need a
+  regex-to-string generator. Ignored in v1 — the fake may not match the
+  pattern.
+- **Recursive, lazy, or async schemas** — `z.lazy`, Valibot async.
+- **Exclusive numeric bounds** — Zod's exclusive `.gt()` / `.lt()` are
+  normalized to inclusive; Valibot's `v.gtValue` / `v.ltValue` are not yet
+  honored.
+- **Less-common containers** — `record`, `map`, `set`, `intersect`, `variant`,
+  etc. An unsupported construct throws a descriptive `UnsupportedSchemaError`,
+  never a silently invalid fake.
+- **Zod v4 internals** — v1 targets Zod v3.
+
+## The contract, precisely
+
+Type inference — `fake(schema)` returning `z.infer` / `InferOutput` — is
+best-effort. The tested guarantee is the **runtime** contract: the fake parses
+through its schema.
+
+For the failure mode and error type, see
+[`UnsupportedSchemaError`](/fakeborn/guides/options/#unsupportedschemaerror) in the
+Options guide.

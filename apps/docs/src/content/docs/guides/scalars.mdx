@@ -1,0 +1,46 @@
+---
+title: Scalars
+description: Every supported scalar schema and the faker data it maps to.
+---
+
+fakeborn supports seven scalar kinds. Each one maps to a faker generator, so
+the value you get is realistic-looking data, not an empty placeholder.
+
+## The mapping
+
+| Schema             | Generated with               | Result                      |
+| ------------------ | ---------------------------- | --------------------------- |
+| `z.string()`       | `faker.string.sample()`      | a random string             |
+| `z.number()`       | `faker.number.float()`       | a random float              |
+| `z.boolean()`      | `faker.datatype.boolean()`   | `true` or `false`           |
+| `z.date()`         | `faker.date.anytime()`       | a `Date` instance           |
+| `z.bigint()`       | `faker.number.bigInt()`      | a random bigint             |
+| `z.literal(value)` | —                            | exactly `value`, every time |
+| `z.enum([...])`    | `faker.helpers.arrayElement` | one of the declared members |
+
+```ts
+import { z } from "zod";
+import { fake } from "fakeborn";
+
+fake(z.literal("admin")); // → "admin" — the one allowed value
+fake(z.enum(["red", "green", "blue"])); // → one of the three members
+fake(z.date()); // → a Date that parses through z.date()
+```
+
+## Notes
+
+- **A literal is its own fake.** `z.literal(42)` always produces `42` — it's
+  the only value that satisfies the schema.
+- **An enum picks a member.** Every returned value is one of the declared
+  members, so it always parses.
+- **Constraints change the generator.** Lengths, formats, and numeric bounds
+  are honored — see [Constraints & formats](/fakeborn/guides/constraints-and-formats/).
+- `z.nativeEnum(...)` is not supported in v1 — it throws
+  `UnsupportedSchemaError`. Use `z.enum([...])` instead.
+
+## Valibot parity
+
+Valibot's scalars map the same way — `v.string()`, `v.number()`, `v.boolean()`,
+`v.date()`, `v.bigint()`, `v.literal(...)`, plus `v.picklist([...])` and
+`v.enum({...})` which both behave like Zod's enum. See the
+[Valibot adapter](/fakeborn/guides/valibot-adapter/) guide.

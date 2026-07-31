@@ -270,17 +270,25 @@ export function bootPlayground(root: HTMLElement): void {
   /**
    * The adapter picker doubles as a library switcher: forcing an adapter
    * whose library doesn't match the loaded schema only ever errors, so when
-   * the editor still holds an untouched preset of the other library, seed
-   * that library's example instead. Edited code is never clobbered — the
-   * forced adapter then surfaces its (descriptive) mismatch error, which is
-   * what the escape hatch is for.
+   * the editor still holds an untouched preset, load the SAME example in the
+   * other library (its `feature` counterpart — Zod "Scalars" ↔ Valibot
+   * "Scalars"; no counterpart, e.g. the Errors preset, falls back to the
+   * library's first preset). Edited code is never clobbered — the forced
+   * adapter then surfaces its (descriptive) mismatch error, which is what
+   * the escape hatch is for.
    */
   function onAdapterChange() {
     const adapter = els.adapter.value;
     if (adapter === "zod" || adapter === "valibot") {
       const untouchedPreset = currentCode === currentPreset.code;
       if (untouchedPreset && codeLibrary(currentCode) !== adapter) {
-        const target = PRESETS.find((p) => codeLibrary(p.code) === adapter);
+        const target =
+          PRESETS.find(
+            (p) =>
+              p.feature !== undefined &&
+              p.feature === currentPreset.feature &&
+              codeLibrary(p.code) === adapter,
+          ) ?? PRESETS.find((p) => codeLibrary(p.code) === adapter);
         if (target) {
           selectPreset(target);
           return;

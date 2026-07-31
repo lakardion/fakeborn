@@ -1,6 +1,10 @@
 /**
- * Playground presets — one per fakeborn feature area, grouped for the
- * preset nav (Zod / Valibot / Errors). Selecting a preset seeds the editor.
+ * Playground presets — one per fakeborn feature area (scalars, composites,
+ * constraints), mirrored across both libraries, plus the error case.
+ * Selecting a preset seeds the editor.
+ *
+ * Presets sharing a `feature` are cross-library counterparts: the adapter
+ * picker uses that link to load the SAME example in the other library.
  *
  * Convention: preset (and user) code declares a top-level `schema`; the
  * iframe harness fakes it with the toolbar options, so count/seed/adapter
@@ -10,6 +14,8 @@ export interface Preset {
   id: string;
   title: string;
   section: "Zod" | "Valibot" | "Errors";
+  /** Feature area — presets sharing one are cross-library counterparts. */
+  feature?: "scalars" | "composites" | "constraints";
   code: string;
 }
 
@@ -20,6 +26,7 @@ export const PRESETS: Preset[] = [
     id: "zod-scalars",
     title: "Scalars",
     section: "Zod",
+    feature: "scalars",
     code: `import { z } from "zod";
 
 const schema = z.object({
@@ -35,6 +42,7 @@ const schema = z.object({
     id: "zod-composites",
     title: "Composites",
     section: "Zod",
+    feature: "composites",
     code: `import { z } from "zod";
 
 const schema = z.object({
@@ -50,6 +58,7 @@ const schema = z.object({
     id: "zod-constraints",
     title: "Constraints & formats",
     section: "Zod",
+    feature: "constraints",
     code: `import { z } from "zod";
 
 const schema = z.object({
@@ -63,16 +72,51 @@ const schema = z.object({
 `,
   },
   {
-    id: "valibot-object",
-    title: "Object + pipe constraints",
+    id: "valibot-scalars",
+    title: "Scalars",
     section: "Valibot",
+    feature: "scalars",
     code: `import * as v from "valibot";
 
-// Same contract, other library — the adapter is auto-detected.
 const schema = v.object({
-  id: v.pipe(v.string(), v.uuid()),
-  age: v.pipe(v.number(), v.integer(), v.minValue(18)),
+  id: v.string(),
+  age: v.number(),
+  active: v.boolean(),
+  createdAt: v.date(),
+  role: v.picklist(["admin", "user", "guest"]),
+});
+`,
+  },
+  {
+    id: "valibot-composites",
+    title: "Composites",
+    section: "Valibot",
+    feature: "composites",
+    code: `import * as v from "valibot";
+
+const schema = v.object({
+  tags: v.array(v.string()),
+  point: v.tuple([v.number(), v.number()]),
+  id: v.union([v.string(), v.number()]),
+  nickname: v.optional(v.string()),
+  deletedAt: v.nullable(v.date()),
+});
+`,
+  },
+  {
+    id: "valibot-constraints",
+    title: "Constraints & formats",
+    section: "Valibot",
+    feature: "constraints",
+    code: `import * as v from "valibot";
+
+const schema = v.object({
   email: v.pipe(v.string(), v.email()),
+  id: v.pipe(v.string(), v.uuid()),
+  site: v.pipe(v.string(), v.url()),
+  username: v.pipe(v.string(), v.minLength(3), v.maxLength(12)),
+  age: v.pipe(v.number(), v.integer(), v.minValue(18), v.maxValue(99)),
+  scores: v.pipe(v.array(v.number()), v.length(3)),
 });
 `,
   },

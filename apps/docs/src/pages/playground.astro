@@ -15,9 +15,9 @@ import Playground from "../components/Playground.astro";
   <p>
     Write a schema, get fakes that satisfy it. The harness calls
     <code>fake(schema, {"{ count, seed, adapter }"})</code> for you — declare a top-level
-    <code>schema</code> and use the toolbar to control the run. Picking an adapter loads a
-    matching example; leave it on <code>auto</code> to let detection decide. Everything executes
-    locally in a sandboxed iframe; nothing leaves your browser.
+    <code>schema</code> and use the toolbar to control the run. Picking an adapter switches to
+    the same example in that library; leave it on <code>auto</code> to let detection decide.
+    Everything executes locally in a sandboxed iframe; nothing leaves your browser.
   </p>
   <Playground />
 </StarlightPage>

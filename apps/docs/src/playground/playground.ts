@@ -116,6 +116,12 @@ function isDark(): boolean {
   return document.documentElement.dataset.theme !== "light";
 }
 
+/** Which validator library a snippet belongs to, read off its import. */
+function codeLibrary(code: string): "zod" | "valibot" | undefined {
+  const match = /from\s+["'](zod|valibot)["']/.exec(code);
+  return match?.[1] as "zod" | "valibot" | undefined;
+}
+
 /** Fetch the pre-bundled runtimes (same-origin, cacheable) for inlining into
  * the iframe import map as data: URLs — see runnerSrcdoc for why. */
 async function fetchRuntimeBundles(): Promise<Record<RuntimeName, string>> {
@@ -261,6 +267,29 @@ export function bootPlayground(root: HTMLElement): void {
     autorunTimer = setTimeout(run, AUTORUN_DELAY_MS);
   }
 
+  /**
+   * The adapter picker doubles as a library switcher: forcing an adapter
+   * whose library doesn't match the loaded schema only ever errors, so when
+   * the editor still holds an untouched preset of the other library, seed
+   * that library's example instead. Edited code is never clobbered — the
+   * forced adapter then surfaces its (descriptive) mismatch error, which is
+   * what the escape hatch is for.
+   */
+  function onAdapterChange() {
+    const adapter = els.adapter.value;
+    if (adapter === "zod" || adapter === "valibot") {
+      const untouchedPreset = currentCode === currentPreset.code;
+      if (untouchedPreset && codeLibrary(currentCode) !== adapter) {
+        const target = PRESETS.find((p) => codeLibrary(p.code) === adapter);
+        if (target) {
+          selectPreset(target);
+          return;
+        }
+      }
+    }
+    scheduleAutorun();
+  }
+
   // ---------------------------------------------------------------- presets
 
   function renderNav() {
@@ -383,7 +412,8 @@ export function bootPlayground(root: HTMLElement): void {
   els.autorun.addEventListener("change", () => {
     if (els.autorun.checked) run();
   });
-  for (const input of [els.count, els.seed, els.adapter]) {
+  els.adapter.addEventListener("change", onAdapterChange);
+  for (const input of [els.count, els.seed]) {
     input.addEventListener("input", scheduleAutorun);
   }
 

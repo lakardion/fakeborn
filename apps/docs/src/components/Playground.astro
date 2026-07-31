@@ -8,36 +8,88 @@
  * `not-content` opts the whole island out of Starlight's markdown rhythm
  * (.sl-markdown-content * + * margin-top), which otherwise pushes toolbar
  * siblings (labels, the Run button) 1rem down and breaks centering.
+ *
+ * Styling: Tailwind utilities for structure and controls (shadcn idioms —
+ * unified h-8 controls, rounded-md, focus-visible rings), theme-aware colors
+ * via var() arbitrary values. The <style> block keeps what utilities can't
+ * express: the --pg-* token flip with the site's data-theme, state colors,
+ * and the JS-rendered preset nav. Note --sl-color-white flips *dark* in the
+ * light theme, so anything needing a fixed accent-foreground uses
+ * --pg-accent-fg instead.
  */
 ---
 
-<div class="playground not-content" data-playground>
-  <div class="pg-toolbar">
-    <strong class="pg-title" data-pg-title></strong>
-    <div class="pg-options">
-      <label>count <input data-pg-count type="number" min="1" placeholder="1" /></label>
-      <label>seed <input data-pg-seed type="number" placeholder="random" /></label>
-      <label
-        >adapter
-        <select data-pg-adapter>
+<div class="not-content flex flex-col gap-3" data-playground>
+  <div
+    class="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-(--sl-color-hairline) bg-(--sl-color-bg-sidebar) px-3 py-2 text-(length:--sl-text-sm)"
+  >
+    <strong class="mr-auto text-(length:--sl-text-base)" data-pg-title></strong>
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <label class="inline-flex items-center gap-1.5 whitespace-nowrap text-(--sl-color-gray-2)">
+        count
+        <input
+          data-pg-count
+          type="number"
+          min="1"
+          placeholder="1"
+          class="h-8 w-18 rounded-md border border-(--sl-color-hairline) bg-(--sl-color-bg) px-2 text-(length:--sl-text-sm) text-(--sl-color-text) transition-colors placeholder:text-(--sl-color-gray-3) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--sl-color-accent)"
+        />
+      </label>
+      <label class="inline-flex items-center gap-1.5 whitespace-nowrap text-(--sl-color-gray-2)">
+        seed
+        <input
+          data-pg-seed
+          type="number"
+          placeholder="random"
+          class="h-8 w-18 rounded-md border border-(--sl-color-hairline) bg-(--sl-color-bg) px-2 text-(length:--sl-text-sm) text-(--sl-color-text) transition-colors placeholder:text-(--sl-color-gray-3) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--sl-color-accent)"
+        />
+      </label>
+      <label class="inline-flex items-center gap-1.5 whitespace-nowrap text-(--sl-color-gray-2)">
+        adapter
+        <select
+          data-pg-adapter
+          class="h-8 rounded-md border border-(--sl-color-hairline) bg-(--sl-color-bg) px-2 text-(length:--sl-text-sm) text-(--sl-color-text) transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--sl-color-accent)"
+        >
           <option value="">auto</option>
           <option value="zod">zod</option>
           <option value="valibot">valibot</option>
         </select>
       </label>
     </div>
-    <div class="pg-actions">
-      <label class="pg-autorun"><input data-pg-autorun type="checkbox" checked /> auto-run</label>
-      <button data-pg-run type="button" class="pg-run">▶ Run</button>
+    <div class="flex items-center gap-3">
+      <label class="inline-flex items-center gap-1.5 whitespace-nowrap text-(--sl-color-gray-2)">
+        <input data-pg-autorun type="checkbox" checked class="size-3.5 accent-(--sl-color-accent)" />
+        auto-run
+      </label>
+      <button
+        data-pg-run
+        type="button"
+        class="h-8 cursor-pointer rounded-md bg-(--sl-color-accent) px-3.5 text-(length:--sl-text-sm) font-semibold text-(--pg-accent-fg) transition-[filter] hover:brightness-115 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--sl-color-accent)"
+        >▶ Run</button
+      >
     </div>
   </div>
-  <div class="pg-body">
-    <nav class="pg-nav" data-pg-nav aria-label="Playground presets"></nav>
-    <div class="pg-main">
-      <div class="pg-editor" data-pg-editor>
-        <p class="pg-editor-loading">Loading editor…</p>
+  <div class="grid grid-cols-1 gap-3 min-[50rem]:grid-cols-[13rem_1fr] min-[50rem]:items-start">
+    <nav
+      class="flex flex-col gap-4 rounded-lg border border-(--sl-color-hairline) bg-(--sl-color-bg-sidebar) p-3 min-[50rem]:sticky min-[50rem]:top-[calc(var(--sl-nav-height)+1rem)]"
+      data-pg-nav
+      aria-label="Playground presets"
+    ></nav>
+    <div class="flex min-w-0 flex-col gap-3">
+      <div
+        class="min-h-[22rem] overflow-hidden rounded-lg border border-(--sl-color-hairline) bg-(--pg-editor-bg) [&_.cm-editor]:h-full"
+        data-pg-editor
+      >
+        <p class="p-4 text-(length:--sl-text-sm) text-(--sl-color-gray-3)" data-pg-loading>
+          Loading editor…
+        </p>
       </div>
-      <div class="pg-output is-idle" data-pg-output aria-live="polite"></div>
+      <div
+        class="pg-output max-h-96 min-h-32 overflow-auto rounded-lg border border-(--sl-color-hairline) bg-(--pg-editor-bg) px-4 py-3 text-[0.8125rem] text-(--pg-editor-fg)"
+        data-pg-output
+        data-state="idle"
+        aria-live="polite"
+      ></div>
     </div>
   </div>
 </div>
@@ -50,8 +102,8 @@
   }
 
   [data-playground] {
-    /* Editor/output surfaces — flip with the site theme. Dark (default) is
-     * Polar Night; light is Snow Storm. */
+    /* Editor/output surfaces + syntax palette — flip with the site theme.
+     * Dark (default) is Polar Night; light is Snow Storm. */
     --pg-editor-bg: var(--color-nord-1);
     --pg-editor-fg: var(--color-nord-4);
     --pg-gutter-fg: var(--color-nord-3);
@@ -64,10 +116,8 @@
     --pg-syn-function: var(--color-nord-8);
     --pg-syn-type: var(--color-nord-7);
     --pg-syn-comment: #616e88;
-
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    /* Dark text on the light frost accent (≈8:1). */
+    --pg-accent-fg: var(--color-nord-0);
   }
 
   :root[data-theme="light"] [data-playground] {
@@ -83,95 +133,43 @@
     --pg-syn-function: var(--color-nord-10);
     --pg-syn-type: color-mix(in srgb, var(--color-nord-7) 60%, var(--color-nord-0));
     --pg-syn-comment: var(--color-gray-400);
+    /* Light text on the darkened light-theme accent (≈5:1). */
+    --pg-accent-fg: var(--color-nord-6);
   }
 
-  /* ── toolbar ─────────────────────────────────────────────────────── */
-  .pg-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.75rem 1rem;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--sl-color-hairline);
-    border-radius: 0.5rem;
-    background: var(--sl-color-bg-sidebar);
-    font-size: var(--sl-text-sm);
+  /* ── output states (playground.ts toggles data-state) ────────────── */
+  .pg-output[data-state="idle"],
+  .pg-output[data-state="running"] {
+    color: var(--pg-gutter-fg);
   }
-  .pg-title {
-    font-size: var(--sl-text-base);
-    margin-right: auto;
-  }
-  .pg-options,
-  .pg-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
-  .pg-options label,
-  .pg-autorun {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    color: var(--sl-color-gray-2);
-    white-space: nowrap;
-  }
-  .pg-options input[type="number"] {
-    width: 4.5rem;
-  }
-  .pg-options input,
-  .pg-options select {
-    background: var(--sl-color-bg);
-    color: var(--sl-color-text);
-    border: 1px solid var(--sl-color-hairline);
-    border-radius: 0.375rem;
-    padding: 0.25rem 0.5rem;
-    font-size: var(--sl-text-sm);
-  }
-  .pg-run {
-    background: var(--sl-color-accent);
-    color: var(--sl-color-white);
+  .pg-output pre {
+    margin: 0;
+    padding: 0;
+    background: none;
     border: none;
-    border-radius: 0.375rem;
-    padding: 0.3rem 0.875rem;
-    font-weight: 600;
-    font-size: var(--sl-text-sm);
-    cursor: pointer;
+    font-family: var(--sl-font-mono);
+    white-space: pre-wrap;
+    word-break: break-word;
   }
-  .pg-run:hover {
-    filter: brightness(1.15);
+  .pg-output-error-name {
+    color: var(--sl-color-red);
+    font-weight: 700;
+    margin-bottom: 0.25rem;
   }
-  :root[data-theme="light"] .pg-run {
-    color: var(--color-nord-6);
+  .pg-output-log {
+    font-family: var(--sl-font-mono);
+    padding-top: 0.25rem;
+    border-top: 1px solid var(--sl-color-hairline);
+    margin-top: 0.25rem;
+  }
+  .pg-output-log.is-warn {
+    color: var(--sl-color-orange);
+  }
+  .pg-output-log.is-error {
+    color: var(--sl-color-red);
   }
 
-  /* ── body: preset nav + workspace ────────────────────────────────── */
-  .pg-body {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-  @media (min-width: 50rem) {
-    .pg-body {
-      grid-template-columns: 13rem 1fr;
-      align-items: start;
-    }
-  }
-  .pg-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding: 0.75rem;
-    border: 1px solid var(--sl-color-hairline);
-    border-radius: 0.5rem;
-    background: var(--sl-color-bg-sidebar);
-  }
-  @media (min-width: 50rem) {
-    .pg-nav {
-      position: sticky;
-      top: calc(var(--sl-nav-height) + 1rem);
-    }
-  }
+  /* ── preset nav (rendered by playground.ts, state-driven) ────────── */
   .pg-group {
     display: flex;
     flex-direction: column;
@@ -200,79 +198,12 @@
     color: var(--sl-color-white);
   }
   .pg-preset.is-active {
-    background: var(--sl-color-accent-low, var(--sl-color-gray-6));
+    background: var(--sl-color-accent-low);
     color: var(--sl-color-accent);
     font-weight: 600;
   }
   :root[data-theme="light"] .pg-preset:hover {
     color: var(--sl-color-black);
-  }
-
-  /* ── editor over output ──────────────────────────────────────────── */
-  .pg-main {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    min-width: 0;
-  }
-  .pg-editor {
-    border: 1px solid var(--sl-color-hairline);
-    border-radius: 0.5rem;
-    background: var(--pg-editor-bg);
-    overflow: hidden;
-    min-height: 22rem;
-  }
-  .pg-editor .cm-editor {
-    height: 100%;
-  }
-  .pg-editor.is-mounted .pg-editor-loading {
-    display: none;
-  }
-  .pg-editor-loading {
-    padding: 1rem;
-    color: var(--sl-color-gray-3);
-    font-size: var(--sl-text-sm);
-  }
-  .pg-output {
-    border: 1px solid var(--sl-color-hairline);
-    border-radius: 0.5rem;
-    background: var(--pg-editor-bg);
-    color: var(--pg-editor-fg);
-    padding: 0.75rem 1rem;
-    min-height: 8rem;
-    max-height: 24rem;
-    overflow: auto;
-    font-size: 0.8125rem;
-  }
-  .pg-output pre {
-    margin: 0;
-    font-family: var(--sl-font-mono);
-    white-space: pre-wrap;
-    word-break: break-word;
-    background: none;
-    border: none;
-    padding: 0;
-  }
-  .pg-output.is-idle,
-  .pg-output.is-running {
-    color: var(--pg-gutter-fg);
-  }
-  .pg-output-error-name {
-    color: var(--sl-color-red);
-    font-weight: 700;
-    margin-bottom: 0.25rem;
-  }
-  .pg-output-log {
-    font-family: var(--sl-font-mono);
-    padding-top: 0.25rem;
-    border-top: 1px solid var(--sl-color-hairline);
-    margin-top: 0.25rem;
-  }
-  .pg-output-log.is-warn {
-    color: var(--sl-color-orange);
-  }
-  .pg-output-log.is-error {
-    color: var(--sl-color-red);
   }
 </style>
 

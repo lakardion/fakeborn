@@ -204,7 +204,9 @@ export function bootPlayground(root: HTMLElement): void {
   // ---------------------------------------------------------------- output
 
   function showOutput(kind: "idle" | "running" | "result" | "error", text: string, name?: string) {
-    els.output.className = `pg-output is-${kind}`;
+    // data-state, not className — the structural styles are Tailwind
+    // utilities in markup that must survive state changes.
+    els.output.dataset.state = kind;
     els.output.replaceChildren();
     if (kind === "error") {
       const heading = document.createElement("div");
@@ -367,7 +369,7 @@ export function bootPlayground(root: HTMLElement): void {
       ],
       parent: els.editorHost,
     });
-    els.editorHost.classList.add("is-mounted");
+    els.editorHost.querySelector("[data-pg-loading]")?.remove();
 
     // Follow the site's theme toggle for CM's own dark/light defaults.
     new MutationObserver(() =>

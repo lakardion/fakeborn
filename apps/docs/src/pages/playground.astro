@@ -1,0 +1,22 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import Playground from "../components/Playground.astro";
+---
+
+<StarlightPage
+  frontmatter={{
+    title: "Playground",
+    description:
+      "Try fakeborn in the browser — write a Zod or Valibot schema, run it in a sandboxed iframe, and see the fakes it generates.",
+    tableOfContents: false,
+  }}
+  hasSidebar={false}
+>
+  <p>
+    Write a schema, get fakes that satisfy it. The harness calls
+    <code>fake(schema, {"{ count, seed, adapter }"})</code> for you — declare a top-level
+    <code>schema</code> and use the toolbar to control the run. Everything executes locally in a
+    sandboxed iframe; nothing leaves your browser.
+  </p>
+  <Playground />
+</StarlightPage>

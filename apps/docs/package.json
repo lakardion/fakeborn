@@ -3,18 +3,27 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
+    "dev": "bun run build:runtime && astro dev",
+    "build": "bun run build:runtime && astro build",
+    "build:runtime": "bun scripts/build-playground-runtime.ts",
     "preview": "astro preview",
     "astro": "astro"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.41.5",
     "@astrojs/starlight-tailwind": "^5.0.0",
+    "@codemirror/lang-javascript": "^6.2.5",
+    "@codemirror/language": "^6.11.3",
+    "@codemirror/state": "^6.5.2",
+    "@lezer/highlight": "^1.2.1",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.1.6",
+    "codemirror": "^6.0.2",
     "fakeborn": "workspace:*",
     "sharp": "^0.35.3",
-    "tailwindcss": "^4.3.3"
+    "sucrase": "^3.35.0",
+    "tailwindcss": "^4.3.3",
+    "valibot": "^1.4.1",
+    "zod": "^3.23.0"
   }
 }

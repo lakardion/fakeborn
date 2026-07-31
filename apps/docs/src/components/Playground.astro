@@ -1,13 +1,17 @@
 ---
 /**
- * Playground island — framework-free. All behavior lives in the processed
+ * Framework-free playground island. All behavior lives in the processed
  * <script> below (Astro bundles it per-page, so only /playground pays for
  * it); all logic in src/playground/playground.ts. Nothing here is SSR-bound:
  * CodeMirror mounts client-side from that script, never in frontmatter.
+ *
+ * `not-content` opts the whole island out of Starlight's markdown rhythm
+ * (.sl-markdown-content * + * margin-top), which otherwise pushes toolbar
+ * siblings (labels, the Run button) 1rem down and breaks centering.
  */
 ---
 
-<div class="playground" data-playground>
+<div class="playground not-content" data-playground>
   <div class="pg-toolbar">
     <strong class="pg-title" data-pg-title></strong>
     <div class="pg-options">

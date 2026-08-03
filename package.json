@@ -8,6 +8,8 @@
   "type": "module",
   "scripts": {
     "build": "bun run --filter fakeborn build",
+    "docs": "bun run --filter docs dev",
+    "docs:build": "bun run --filter docs build",
     "typecheck": "bun run --filter fakeborn typecheck",
     "test": "bun run --filter fakeborn test",
     "lint": "oxlint .",

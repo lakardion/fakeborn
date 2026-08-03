@@ -1,0 +1,214 @@
+---
+/**
+ * Framework-free playground island. All behavior lives in the processed
+ * <script> below (Astro bundles it per-page, so only /playground pays for
+ * it); all logic in src/playground/playground.ts. Nothing here is SSR-bound:
+ * CodeMirror mounts client-side from that script, never in frontmatter.
+ *
+ * `not-content` opts the whole island out of Starlight's markdown rhythm
+ * (.sl-markdown-content * + * margin-top), which otherwise pushes toolbar
+ * siblings (labels, the Run button) 1rem down and breaks centering.
+ *
+ * Styling: Tailwind utilities for structure and controls (shadcn idioms —
+ * unified h-8 controls, rounded-md, focus-visible rings), theme-aware colors
+ * via var() arbitrary values. The <style> block keeps what utilities can't
+ * express: the --pg-* token flip with the site's data-theme, state colors,
+ * and the JS-rendered preset nav. Note --sl-color-white flips *dark* in the
+ * light theme, so anything needing a fixed accent-foreground uses
+ * --pg-accent-fg instead.
+ */
+---
+
+<div class="not-content flex flex-col gap-3" data-playground>
+  <div
+    class="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-(--sl-color-hairline) bg-(--sl-color-bg-sidebar) px-3 py-2 text-(length:--sl-text-sm)"
+  >
+    <strong class="mr-auto text-(length:--sl-text-base)" data-pg-title></strong>
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <label class="inline-flex items-center gap-1.5 whitespace-nowrap text-(--sl-color-gray-2)">
+        count
+        <input
+          data-pg-count
+          type="number"
+          min="1"
+          placeholder="1"
+          class="h-8 w-18 rounded-md border border-(--sl-color-hairline) bg-(--sl-color-bg) px-2 text-(length:--sl-text-sm) text-(--sl-color-text) transition-colors placeholder:text-(--sl-color-gray-3) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--sl-color-accent)"
+        />
+      </label>
+      <label class="inline-flex items-center gap-1.5 whitespace-nowrap text-(--sl-color-gray-2)">
+        seed
+        <input
+          data-pg-seed
+          type="number"
+          placeholder="random"
+          class="h-8 w-18 rounded-md border border-(--sl-color-hairline) bg-(--sl-color-bg) px-2 text-(length:--sl-text-sm) text-(--sl-color-text) transition-colors placeholder:text-(--sl-color-gray-3) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--sl-color-accent)"
+        />
+      </label>
+      <label class="inline-flex items-center gap-1.5 whitespace-nowrap text-(--sl-color-gray-2)">
+        adapter
+        <select
+          data-pg-adapter
+          class="h-8 rounded-md border border-(--sl-color-hairline) bg-(--sl-color-bg) px-2 text-(length:--sl-text-sm) text-(--sl-color-text) transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--sl-color-accent)"
+        >
+          <option value="">auto</option>
+          <option value="zod">zod</option>
+          <option value="valibot">valibot</option>
+        </select>
+      </label>
+    </div>
+    <div class="flex items-center gap-3">
+      <label class="inline-flex items-center gap-1.5 whitespace-nowrap text-(--sl-color-gray-2)">
+        <input data-pg-autorun type="checkbox" checked class="size-3.5 accent-(--sl-color-accent)" />
+        auto-run
+      </label>
+      <button
+        data-pg-run
+        type="button"
+        class="h-8 cursor-pointer rounded-md bg-(--sl-color-accent) px-3.5 text-(length:--sl-text-sm) font-semibold text-(--pg-accent-fg) transition-[filter] hover:brightness-115 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--sl-color-accent)"
+        >▶ Run</button
+      >
+    </div>
+  </div>
+  <div class="grid grid-cols-1 gap-3 min-[50rem]:grid-cols-[13rem_1fr] min-[50rem]:items-start">
+    <nav
+      class="flex flex-col gap-4 rounded-lg border border-(--sl-color-hairline) bg-(--sl-color-bg-sidebar) p-3 min-[50rem]:sticky min-[50rem]:top-[calc(var(--sl-nav-height)+1rem)]"
+      data-pg-nav
+      aria-label="Playground presets"
+    ></nav>
+    <div class="flex min-w-0 flex-col gap-3">
+      <div
+        class="min-h-[22rem] overflow-hidden rounded-lg border border-(--sl-color-hairline) bg-(--pg-editor-bg) [&_.cm-editor]:h-full"
+        data-pg-editor
+      >
+        <p class="p-4 text-(length:--sl-text-sm) text-(--sl-color-gray-3)" data-pg-loading>
+          Loading editor…
+        </p>
+      </div>
+      <div
+        class="pg-output max-h-96 min-h-32 overflow-auto rounded-lg border border-(--sl-color-hairline) bg-(--pg-editor-bg) px-4 py-3 text-[0.8125rem] text-(--pg-editor-fg)"
+        data-pg-output
+        data-state="idle"
+        aria-live="polite"
+      ></div>
+    </div>
+  </div>
+</div>
+
+<style is:global>
+  /* Full-width: Starlight caps .sl-container at --sl-content-width; this
+   * style only ships on /playground (it's bundled with this component). */
+  .sl-container:has(> [data-playground]) {
+    max-width: none;
+  }
+
+  [data-playground] {
+    /* Editor/output surfaces + syntax palette — flip with the site theme.
+     * Dark (default) is Polar Night; light is Snow Storm. */
+    --pg-editor-bg: var(--color-nord-1);
+    --pg-editor-fg: var(--color-nord-4);
+    --pg-gutter-fg: var(--color-nord-3);
+    --pg-active-line: color-mix(in srgb, var(--color-nord-2) 60%, transparent);
+    --pg-selection: color-mix(in srgb, var(--color-nord-10) 45%, transparent);
+    --pg-syn-keyword: var(--color-nord-9);
+    --pg-syn-string: var(--color-aurora-green);
+    --pg-syn-literal: var(--color-aurora-purple);
+    --pg-syn-property: var(--color-nord-7);
+    --pg-syn-function: var(--color-nord-8);
+    --pg-syn-type: var(--color-nord-7);
+    --pg-syn-comment: #616e88;
+    /* Dark text on the light frost accent (≈8:1). */
+    --pg-accent-fg: var(--color-nord-0);
+  }
+
+  :root[data-theme="light"] [data-playground] {
+    --pg-editor-bg: var(--color-nord-6);
+    --pg-editor-fg: var(--color-nord-0);
+    --pg-gutter-fg: var(--color-gray-400);
+    --pg-active-line: color-mix(in srgb, var(--color-nord-5) 80%, transparent);
+    --pg-selection: color-mix(in srgb, var(--color-nord-9) 30%, transparent);
+    --pg-syn-keyword: var(--color-nord-10);
+    --pg-syn-string: color-mix(in srgb, var(--color-aurora-green) 60%, var(--color-nord-0));
+    --pg-syn-literal: color-mix(in srgb, var(--color-aurora-purple) 75%, var(--color-nord-0));
+    --pg-syn-property: color-mix(in srgb, var(--color-nord-7) 60%, var(--color-nord-0));
+    --pg-syn-function: var(--color-nord-10);
+    --pg-syn-type: color-mix(in srgb, var(--color-nord-7) 60%, var(--color-nord-0));
+    --pg-syn-comment: var(--color-gray-400);
+    /* Light text on the darkened light-theme accent (≈5:1). */
+    --pg-accent-fg: var(--color-nord-6);
+  }
+
+  /* ── output states (playground.ts toggles data-state) ────────────── */
+  .pg-output[data-state="idle"],
+  .pg-output[data-state="running"] {
+    color: var(--pg-gutter-fg);
+  }
+  .pg-output pre {
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    font-family: var(--sl-font-mono);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .pg-output-error-name {
+    color: var(--sl-color-red);
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+  .pg-output-log {
+    font-family: var(--sl-font-mono);
+    padding-top: 0.25rem;
+    border-top: 1px solid var(--sl-color-hairline);
+    margin-top: 0.25rem;
+  }
+  .pg-output-log.is-warn {
+    color: var(--sl-color-orange);
+  }
+  .pg-output-log.is-error {
+    color: var(--sl-color-red);
+  }
+
+  /* ── preset nav (rendered by playground.ts, state-driven) ────────── */
+  .pg-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+  .pg-group-title {
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--sl-color-gray-3);
+    padding: 0.25rem 0.5rem;
+  }
+  .pg-preset {
+    text-align: left;
+    background: none;
+    border: none;
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.5rem;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-2);
+    cursor: pointer;
+  }
+  .pg-preset:hover {
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-white);
+  }
+  .pg-preset.is-active {
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-accent);
+    font-weight: 600;
+  }
+  :root[data-theme="light"] .pg-preset:hover {
+    color: var(--sl-color-black);
+  }
+</style>
+
+<script>
+  import { bootPlayground } from "../playground/playground";
+  const root = document.querySelector<HTMLElement>("[data-playground]");
+  if (root) bootPlayground(root);
+</script>

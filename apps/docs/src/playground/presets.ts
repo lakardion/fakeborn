@@ -1,10 +1,12 @@
 /**
  * Playground presets — one per fakeborn feature area (scalars, composites,
- * constraints), mirrored across both libraries, plus the error case.
- * Selecting a preset seeds the editor.
+ * constraints), plus the error case. Selecting a preset seeds the editor.
  *
- * Presets sharing a `feature` are cross-library counterparts: the adapter
- * picker uses that link to load the SAME example in the other library.
+ * Each preset carries both library variants of the SAME example. The sidebar
+ * lists every preset once; the adapter picker converts the code in place —
+ * picking "valibot" with an untouched preset loaded swaps `z.*` for `v.*`
+ * (and back), rather than jumping to a different sidebar entry. Presets
+ * without a `valibot` variant are Zod-only.
  *
  * Convention: preset (and user) code declares a top-level `schema`; the
  * iframe harness fakes it with the toolbar options, so count/seed/adapter
@@ -13,21 +15,20 @@
 export interface Preset {
   id: string;
   title: string;
-  section: "Zod" | "Valibot" | "Errors";
-  /** Feature area — presets sharing one are cross-library counterparts. */
-  feature?: "scalars" | "composites" | "constraints";
-  code: string;
+  section: "Examples" | "Errors";
+  /** The same example per library; `valibot` absent means Zod-only. */
+  code: { zod: string; valibot?: string };
 }
 
-export const PRESET_SECTIONS: Preset["section"][] = ["Zod", "Valibot", "Errors"];
+export const PRESET_SECTIONS: Preset["section"][] = ["Examples", "Errors"];
 
 export const PRESETS: Preset[] = [
   {
-    id: "zod-scalars",
+    id: "scalars",
     title: "Scalars",
-    section: "Zod",
-    feature: "scalars",
-    code: `import { z } from "zod";
+    section: "Examples",
+    code: {
+      zod: `import { z } from "zod";
 
 const schema = z.object({
   id: z.string(),
@@ -37,13 +38,24 @@ const schema = z.object({
   role: z.enum(["admin", "user", "guest"]),
 });
 `,
+      valibot: `import * as v from "valibot";
+
+const schema = v.object({
+  id: v.string(),
+  age: v.number(),
+  active: v.boolean(),
+  createdAt: v.date(),
+  role: v.picklist(["admin", "user", "guest"]),
+});
+`,
+    },
   },
   {
-    id: "zod-composites",
+    id: "composites",
     title: "Composites",
-    section: "Zod",
-    feature: "composites",
-    code: `import { z } from "zod";
+    section: "Examples",
+    code: {
+      zod: `import { z } from "zod";
 
 const schema = z.object({
   tags: z.array(z.string()),
@@ -53,13 +65,24 @@ const schema = z.object({
   deletedAt: z.date().nullable(),
 });
 `,
+      valibot: `import * as v from "valibot";
+
+const schema = v.object({
+  tags: v.array(v.string()),
+  point: v.tuple([v.number(), v.number()]),
+  id: v.union([v.string(), v.number()]),
+  nickname: v.optional(v.string()),
+  deletedAt: v.nullable(v.date()),
+});
+`,
+    },
   },
   {
-    id: "zod-constraints",
+    id: "constraints",
     title: "Constraints & formats",
-    section: "Zod",
-    feature: "constraints",
-    code: `import { z } from "zod";
+    section: "Examples",
+    code: {
+      zod: `import { z } from "zod";
 
 const schema = z.object({
   email: z.string().email(),
@@ -70,45 +93,7 @@ const schema = z.object({
   scores: z.array(z.number()).length(3),
 });
 `,
-  },
-  {
-    id: "valibot-scalars",
-    title: "Scalars",
-    section: "Valibot",
-    feature: "scalars",
-    code: `import * as v from "valibot";
-
-const schema = v.object({
-  id: v.string(),
-  age: v.number(),
-  active: v.boolean(),
-  createdAt: v.date(),
-  role: v.picklist(["admin", "user", "guest"]),
-});
-`,
-  },
-  {
-    id: "valibot-composites",
-    title: "Composites",
-    section: "Valibot",
-    feature: "composites",
-    code: `import * as v from "valibot";
-
-const schema = v.object({
-  tags: v.array(v.string()),
-  point: v.tuple([v.number(), v.number()]),
-  id: v.union([v.string(), v.number()]),
-  nickname: v.optional(v.string()),
-  deletedAt: v.nullable(v.date()),
-});
-`,
-  },
-  {
-    id: "valibot-constraints",
-    title: "Constraints & formats",
-    section: "Valibot",
-    feature: "constraints",
-    code: `import * as v from "valibot";
+      valibot: `import * as v from "valibot";
 
 const schema = v.object({
   email: v.pipe(v.string(), v.email()),
@@ -119,16 +104,19 @@ const schema = v.object({
   scores: v.pipe(v.array(v.number()), v.length(3)),
 });
 `,
+    },
   },
   {
     id: "unsupported",
     title: "Unsupported schema",
     section: "Errors",
-    code: `import { z } from "zod";
+    code: {
+      zod: `import { z } from "zod";
 
 // z.map() exposes nothing fakeborn can introspect in v1,
 // so this throws a descriptive UnsupportedSchemaError.
 const schema = z.map(z.string(), z.number());
 `,
+    },
   },
 ];

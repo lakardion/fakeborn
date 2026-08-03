@@ -116,12 +116,6 @@ function isDark(): boolean {
   return document.documentElement.dataset.theme !== "light";
 }
 
-/** Which validator library a snippet belongs to, read off its import. */
-function codeLibrary(code: string): "zod" | "valibot" | undefined {
-  const match = /from\s+["'](zod|valibot)["']/.exec(code);
-  return match?.[1] as "zod" | "valibot" | undefined;
-}
-
 /** Fetch the pre-bundled runtimes (same-origin, cacheable) for inlining into
  * the iframe import map as data: URLs — see runnerSrcdoc for why. */
 async function fetchRuntimeBundles(): Promise<Record<RuntimeName, string>> {
@@ -163,7 +157,9 @@ export function bootPlayground(root: HTMLElement): void {
   const els = queryEls(root);
 
   let currentPreset: Preset = PRESETS[0];
-  let currentCode = currentPreset.code;
+  /** The variant of currentPreset currently loaded (flips with the adapter). */
+  let presetCode = currentPreset.code.zod;
+  let currentCode = presetCode;
   let editor: EditorView | null = null;
   let runId = 0;
   let runnerReady = false;
@@ -270,29 +266,20 @@ export function bootPlayground(root: HTMLElement): void {
   /**
    * The adapter picker doubles as a library switcher: forcing an adapter
    * whose library doesn't match the loaded schema only ever errors, so when
-   * the editor still holds an untouched preset, load the SAME example in the
-   * other library (its `feature` counterpart — Zod "Scalars" ↔ Valibot
-   * "Scalars"; no counterpart, e.g. the Errors preset, falls back to the
-   * library's first preset). Edited code is never clobbered — the forced
-   * adapter then surfaces its (descriptive) mismatch error, which is what
-   * the escape hatch is for.
+   * the editor still holds an untouched preset, convert the code IN PLACE —
+   * swap `z.*` for `v.*` (or back) by loading the preset's variant for the
+   * picked library. Zod-only presets (the Errors one) have nothing to swap
+   * to, so they keep their code and surface the mismatch error. Edited code
+   * is never clobbered either — the forced adapter then surfaces its
+   * (descriptive) mismatch error, which is what the escape hatch is for.
    */
   function onAdapterChange() {
     const adapter = els.adapter.value;
     if (adapter === "zod" || adapter === "valibot") {
-      const untouchedPreset = currentCode === currentPreset.code;
-      if (untouchedPreset && codeLibrary(currentCode) !== adapter) {
-        const target =
-          PRESETS.find(
-            (p) =>
-              p.feature !== undefined &&
-              p.feature === currentPreset.feature &&
-              codeLibrary(p.code) === adapter,
-          ) ?? PRESETS.find((p) => codeLibrary(p.code) === adapter);
-        if (target) {
-          selectPreset(target);
-          return;
-        }
+      const variant = adapter === "valibot" ? currentPreset.code.valibot : currentPreset.code.zod;
+      if (currentCode === presetCode && variant && variant !== presetCode) {
+        loadCode(variant);
+        return;
       }
     }
     scheduleAutorun();
@@ -322,17 +309,33 @@ export function bootPlayground(root: HTMLElement): void {
     els.nav.replaceChildren(...groups);
   }
 
+  /** Replace the editor's contents and run (when auto-run is on). */
+  function loadCode(code: string) {
+    presetCode = code;
+    currentCode = code;
+    editor?.dispatch({
+      changes: { from: 0, to: editor.state.doc.length, insert: code },
+    });
+    if (els.autorun.checked) run();
+  }
+
   function selectPreset(preset: Preset) {
     currentPreset = preset;
-    currentCode = preset.code;
     els.title.textContent = preset.title;
     els.nav
       .querySelectorAll<HTMLElement>("[data-preset]")
       .forEach((el) => el.classList.toggle("is-active", el.dataset.preset === preset.id));
-    editor?.dispatch({
-      changes: { from: 0, to: editor.state.doc.length, insert: preset.code },
-    });
-    if (els.autorun.checked) run();
+    // Load the variant for the forced adapter; Zod-only presets reset the
+    // picker to auto so the loaded code still runs.
+    let variant = preset.code.zod;
+    if (els.adapter.value === "valibot") {
+      if (preset.code.valibot) {
+        variant = preset.code.valibot;
+      } else {
+        els.adapter.value = "";
+      }
+    }
+    loadCode(variant);
   }
 
   // ---------------------------------------------------------------- editor

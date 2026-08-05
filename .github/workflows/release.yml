@@ -60,3 +60,9 @@ jobs:
         env:
           # No NPM_TOKEN on purpose — auth is OIDC trusted publishing.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Bun workspaces use the `workspace:*` protocol (apps/docs -> fakeborn),
+          # which npm can't parse. @semantic-release/npm bumps the lib version via
+          # `npm version`; without this, npm tries to sync the whole workspace
+          # tree and dies with EUNSUPPORTEDPROTOCOL. Skipping the sync is safe —
+          # @semantic-release/git commits the bump.
+          npm_config_workspaces_update: "false"

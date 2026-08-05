@@ -52,7 +52,7 @@ jobs:
 
       - name: Upgrade npm (trusted publishing requires >= 11.5.1)
         run: |
-          npm install --global npm@11
+          npm install --global npm@^11.5.1
           npm --version
 
       - name: Release (semantic-release)

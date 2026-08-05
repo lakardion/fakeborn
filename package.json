@@ -19,7 +19,10 @@
     "check": "bun run lint && bun run format && bun run typecheck && bun run test"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^7.0.0",
+    "@semantic-release/git": "^11.0.1",
     "oxfmt": "0.54.0",
-    "oxlint": "1.69.0"
+    "oxlint": "1.69.0",
+    "semantic-release": "^25.0.9"
   }
 }

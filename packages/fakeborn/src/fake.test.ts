@@ -199,6 +199,48 @@ describe("fake() — Zod composite types", () => {
   });
 });
 
+describe("fake() — Zod runtime-transparent wrappers", () => {
+  // ADR-0001: `.readonly()` constrains nothing at parse time, so it is
+  // unwrapped and the inner schema is faked directly.
+  test("readonly: a plain readonly scalar fakes its inner type and parses", () => {
+    const schema = z.string().readonly();
+    roundTrip(schema);
+    faker.seed(0);
+    expect(typeof fake(schema)).toBe("string");
+  });
+
+  test("readonly: inner constraints survive the unwrap (uuid stays a uuid)", () => {
+    const schema = z.string().uuid().readonly();
+    roundTrip(schema);
+    // Also round-trip through the unwrapped constraint schema, proving the
+    // fake honors the inner checks, not just the readonly shell.
+    roundTrip(z.string().uuid());
+  });
+
+  test("readonly: fields inside an object — the tn-models-fp entityZodShape case", () => {
+    // The playground's canonical shape (src/api/tests/mocks.ts): a readonly
+    // derived field alongside plain and uuid fields.
+    const schema = z.object({
+      firstName: z.string(),
+      lastName: z.string(),
+      age: z.number(),
+      id: z.string().uuid(),
+      fullName: z.string().readonly(),
+    });
+    roundTrip(schema);
+  });
+
+  test("readonly: chained with nullable/optional, in any order, round-trips", () => {
+    roundTrip(z.string().nullable().optional().readonly());
+    roundTrip(z.string().readonly().optional());
+  });
+
+  test("readonly: wrapping a whole composite fakes the composite", () => {
+    const schema = z.object({ id: z.string().uuid(), tags: z.array(z.string()) }).readonly();
+    roundTrip(schema);
+  });
+});
+
 describe("fake() — Zod constraints & formats", () => {
   test("bounded strings stay within min/max length and parse", () => {
     roundTrip(z.string().min(5).max(8));

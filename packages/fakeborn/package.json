@@ -1,6 +1,6 @@
 {
   "name": "fakeborn",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Generate fake data born from your validation schema — pass a validator (Zod, Valibot) to fake() and get a value that satisfies it.",
   "keywords": [
     "fake",

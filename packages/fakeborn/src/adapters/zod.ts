@@ -153,7 +153,9 @@ function arrayLength(def: { typeName: string }): { minLength?: number; maxLength
  * Scalars: ZodString, ZodNumber, ZodBoolean, ZodDate, ZodBigInt, ZodLiteral,
  * ZodEnum. Composites: ZodObject, ZodArray, ZodTuple, ZodUnion, ZodOptional,
  * ZodNullable — these recurse back through `zodToIR` on their child schemas, so
- * nesting works to arbitrary depth. String/number/array constraints (lengths,
+ * nesting works to arbitrary depth. ZodReadonly is a runtime-transparent
+ * wrapper (ADR-0001): unwrapped, faking the inner schema directly.
+ * String/number/array constraints (lengths,
  * formats, int/bounds) are read off `_def.checks` and surfaced on the IR.
  * Unsupported constructs throw a descriptive error rather than producing a
  * silently invalid fake.
@@ -228,10 +230,18 @@ export function zodToIR(schema: unknown): IRNode {
         return { kind: "nullable", inner: zodToIR(def.innerType) };
       }
       break;
+    case "ZodReadonly":
+      // Runtime-transparent wrapper (ADR-0001): `.readonly()` constrains
+      // nothing at parse time, so the fake is simply the inner schema's fake —
+      // no IR node of its own. `_def.innerType` is the wrapped schema.
+      if (def && "innerType" in def) {
+        return zodToIR(def.innerType);
+      }
+      break;
   }
   throw new UnsupportedSchemaError(
     `fakeborn: unsupported Zod schema "${def?.typeName ?? "unknown"}". ` +
       "Supported so far: string, number, boolean, date, bigint, literal, enum, " +
-      "object, array, tuple, union, optional, nullable. More constructs are coming.",
+      "object, array, tuple, union, optional, nullable, readonly. More constructs are coming.",
   );
 }

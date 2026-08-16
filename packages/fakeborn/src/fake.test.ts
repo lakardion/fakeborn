@@ -239,6 +239,66 @@ describe("fake() — Zod runtime-transparent wrappers", () => {
     const schema = z.object({ id: z.string().uuid(), tags: z.array(z.string()) }).readonly();
     roundTrip(schema);
   });
+
+  // ADR-0001: `.brand()` is type-level fiction — nothing changes at parse
+  // time, so it is unwrapped and the inner schema is faked directly.
+  test("brand: a branded scalar fakes its inner type and parses", () => {
+    const schema = z.string().brand<"Id">();
+    roundTrip(schema);
+    faker.seed(0);
+    expect(typeof fake(schema)).toBe("string");
+  });
+
+  test("brand: inner constraints survive the unwrap (uuid stays a uuid)", () => {
+    roundTrip(z.string().uuid().brand<"Id">());
+  });
+
+  test("brand: branding a whole composite fakes the composite", () => {
+    const schema = z.object({ id: z.string().uuid() }).brand<"User">();
+    roundTrip(schema);
+  });
+
+  // ADR-0001: `.default()` only applies when the key is absent, and fakes are
+  // always present, so the fake is the inner schema's fake — never the
+  // default, never undefined.
+  test("default: fakes the inner value — never the default, never undefined", () => {
+    const schema = z.string().default("the-default");
+    roundTrip(schema);
+    for (let i = 0; i < 100; i++) {
+      faker.seed(i);
+      const value = fake(schema);
+      expect(value).toBeDefined();
+      expect(value).not.toBe("the-default");
+    }
+  });
+
+  test("default: inner constraints survive the unwrap (int stays an int)", () => {
+    const schema = z.number().int().default(0);
+    roundTrip(schema);
+    faker.seed(0);
+    const value = fake(schema);
+    expect(Number.isInteger(value)).toBe(true);
+    expect(value).not.toBe(0);
+  });
+
+  // ADR-0001: `.catch()` only engages on parse failure; a faked inner value
+  // parses, so the catch value never surfaces.
+  test("catch: fakes the inner value and parses", () => {
+    const schema = z.number().catch(0);
+    roundTrip(schema);
+    faker.seed(0);
+    expect(typeof fake(schema)).toBe("number");
+  });
+
+  test("wrappers: branded, defaulted, and caught fields inside an object round-trip", () => {
+    const schema = z.object({
+      id: z.string().uuid().brand<"Id">(),
+      role: z.string().default("user"),
+      score: z.number().int().catch(0),
+      name: z.string(),
+    });
+    roundTrip(schema);
+  });
 });
 
 describe("fake() — Zod constraints & formats", () => {

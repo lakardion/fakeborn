@@ -8,8 +8,8 @@
  * constructs are added as new union members here — never by teaching the
  * generator about a particular validator.
  *
- * Covered: the scalars (string, number, boolean, date, bigint, literal, enum)
- * and the composites (object, array, tuple, union, optional, nullable).
+ * Covered: the scalars (string, number, boolean, date, bigint, literal, enum,
+ * any) and the composites (object, array, tuple, union, optional, nullable).
  *
  * Constraints travel on the nodes that carry them — string length/format,
  * number int/bounds, array length — so the generator honors them with zero
@@ -41,6 +41,7 @@ export type IRNode =
   | { kind: "bigint" }
   | { kind: "literal"; value: unknown }
   | { kind: "enum"; values: readonly unknown[] }
+  | { kind: "any" }
   | { kind: "object"; entries: Record<string, IRNode> }
   | { kind: "array"; element: IRNode; minLength?: number; maxLength?: number }
   | { kind: "tuple"; elements: IRNode[] }

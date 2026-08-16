@@ -3,8 +3,8 @@ title: Scalars
 description: Every supported scalar schema and the faker data it maps to.
 ---
 
-fakeborn supports seven scalar kinds. Each one maps to a faker generator, so
-the value you get is realistic-looking data, not an empty placeholder.
+fakeborn supports these scalar schemas. Each one maps to a faker generator,
+so the value you get is realistic-looking data, not an empty placeholder.
 
 ## The mapping
 
@@ -17,6 +17,9 @@ the value you get is realistic-looking data, not an empty placeholder.
 | `z.bigint()`       | `faker.number.bigInt()`      | a random bigint             |
 | `z.literal(value)` | —                            | exactly `value`, every time |
 | `z.enum([...])`    | `faker.helpers.arrayElement` | one of the declared members |
+
+`z.nativeEnum({...})` behaves like `z.enum([...])`: it picks one of the enum's
+visible values, so it always parses.
 
 ```ts
 import { z } from "zod";
@@ -32,11 +35,16 @@ fake(z.date()); // → a Date that parses through z.date()
 - **A literal is its own fake.** `z.literal(42)` always produces `42` — it's
   the only value that satisfies the schema.
 - **An enum picks a member.** Every returned value is one of the declared
-  members, so it always parses.
+  members, so it always parses. For a numeric `z.nativeEnum(...)`, the
+  reverse-mapped keys TypeScript adds (`{ 0: "A", A: 0 }`) are filtered out —
+  only the real members are ever returned.
+- **`z.any()` and `z.unknown()` fake an arbitrary JSON-safe value** — a random
+  string, number, boolean, or simple object — never `undefined`, so the fake is
+  useful in mocks.
+- **`z.void()` and `z.undefined()` fake `undefined`**, which parses cleanly
+  through both.
 - **Constraints change the generator.** Lengths, formats, and numeric bounds
   are honored — see [Constraints & formats](/fakeborn/guides/constraints-and-formats/).
-- `z.nativeEnum(...)` is not supported in v1 — it throws
-  `UnsupportedSchemaError`. Use `z.enum([...])` instead.
 
 ## Valibot parity
 

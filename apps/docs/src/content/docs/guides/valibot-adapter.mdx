@@ -77,6 +77,27 @@ Two Valibot-specific notes:
   opaque and ignored — see
   [Constraints & formats](/fakeborn/guides/constraints-and-formats/).
 
+## Runtime-transparent wrappers
+
+`v.readonly()` and `v.brand("Name")` are pipe actions that constrain nothing at
+parse time — a value valid for the base schema is valid through them. Following
+the same rule as Zod's wrappers (ADR-0001), fakeborn passes straight through
+them and fakes the base schema:
+
+```ts
+const schema = v.object({
+  id: v.pipe(v.string(), v.uuid(), v.brand("Id")),
+  profile: v.pipe(v.object({ email: v.pipe(v.string(), v.email()) }), v.readonly()),
+});
+
+v.parse(schema, fake(schema)); // ✓ always passes
+```
+
+They compose freely with constraint actions (`v.pipe(v.string(), v.email(),
+v.brand("Email"))`) and nest inside larger schemas. Note that the canonical
+form is the pipe action — `v.readonly(v.string())` on its own returns an
+action, not a schema, and is rejected like any other non-schema input.
+
 ## Types
 
 `fake()`'s return type is inferred from the schema — Valibot's `InferOutput` —

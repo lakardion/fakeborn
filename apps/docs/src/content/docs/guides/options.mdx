@@ -68,9 +68,9 @@ message names the offending construct. It throws when:
 
   ```
   fakeborn: unsupported Zod schema "ZodSymbol". Supported so far: string,
-  number, boolean, date, bigint, literal, enum, object, array, tuple, union,
-  optional, nullable, readonly, brand, default, catch. More constructs are
-  coming.
+  number, boolean, date, bigint, literal, enum, native enum, any, unknown,
+  void, undefined, object, array, tuple, union, optional, nullable, readonly,
+  brand, default, catch. More constructs are coming.
   ```
 
 - **No validator is detected** — the value isn't a Zod or Valibot schema:

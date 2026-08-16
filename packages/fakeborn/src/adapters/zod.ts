@@ -38,9 +38,9 @@ function nativeEnumValues(obj: unknown): unknown[] | undefined {
   if (typeof obj !== "object" || obj === null) return undefined;
   const entries = Object.entries(obj);
   const lookup = new Map(entries);
-  return entries
-    .filter(([, value]) => typeof lookup.get(String(value)) !== "number")
-    .map(([, value]) => value);
+  return entries.flatMap(([, value]) =>
+    typeof lookup.get(String(value)) === "number" ? [] : [value],
+  );
 }
 
 /** Map Zod string checks onto the IR string constraint fields. */

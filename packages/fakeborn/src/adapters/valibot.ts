@@ -61,6 +61,22 @@ function stringConstraints(pipe: readonly unknown[]): StringConstraints {
         // timezone — a distinct IR format, since the `date-iso` shape never matches.
         out.format = "date-time-local";
         break;
+      case "iso_date":
+        out.format = "date-only";
+        break;
+      case "iso_time":
+        out.format = "time-local";
+        break;
+      case "iso_time_second":
+        out.format = "time-second-local";
+        break;
+      case "iso_date_time_second":
+        // Seconds but no timezone — again a shape `date-iso` never produces.
+        out.format = "date-time-second-local";
+        break;
+      case "iso_week":
+        out.format = "iso-week";
+        break;
       case "min_length":
         out.minLength = requirement(action);
         break;

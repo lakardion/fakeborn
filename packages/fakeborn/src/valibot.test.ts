@@ -217,6 +217,23 @@ describe("fake() — Valibot constraints & formats", () => {
     expect(fake(schema)).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
   });
 
+  test("the rest of the ISO family produces the exact local shapes and parses (#59)", () => {
+    // Each action has its own regex — seconds/timezone presence differs per
+    // action, so each maps to its own IR format and generator slice.
+    const cases: Array<[v.GenericSchema, RegExp]> = [
+      [v.pipe(v.string(), v.isoDate()), /^\d{4}-\d{2}-\d{2}$/],
+      [v.pipe(v.string(), v.isoTime()), /^\d{2}:\d{2}$/],
+      [v.pipe(v.string(), v.isoTimeSecond()), /^\d{2}:\d{2}:\d{2}$/],
+      [v.pipe(v.string(), v.isoDateTimeSecond()), /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/],
+      [v.pipe(v.string(), v.isoWeek()), /^\d{4}-W\d{2}$/],
+    ];
+    for (const [schema, shape] of cases) {
+      roundTrip(schema);
+      faker.seed(0);
+      expect(fake(schema)).toMatch(shape);
+    }
+  });
+
   test("v.integer() produces an integer; plain numbers may be floats", () => {
     const intSchema = v.pipe(v.number(), v.integer());
     roundTrip(intSchema);

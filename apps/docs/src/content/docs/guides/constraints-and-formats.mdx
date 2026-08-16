@@ -24,13 +24,17 @@ fake(z.string().min(20)); // → at least 20 characters
 
 A declared format pins the generator to matching faker data:
 
-| Zod                     | Valibot                                | Generated with         |
-| ----------------------- | -------------------------------------- | ---------------------- |
-| `z.string().email()`    | `v.pipe(v.string(), v.email())`        | `faker.internet.email` |
-| `z.string().url()`      | `v.pipe(v.string(), v.url())`          | `faker.internet.url`   |
-| `z.string().uuid()`     | `v.pipe(v.string(), v.uuid())`         | `faker.string.uuid`    |
-| `z.string().datetime()` | `v.pipe(v.string(), v.isoTimestamp())` | an ISO date string     |
-| —                       | `v.pipe(v.string(), v.isoDateTime())`  | a local ISO date-time  |
+| Zod                     | Valibot                                                 | Generated with                     |
+| ----------------------- | ------------------------------------------------------- | ---------------------------------- |
+| `z.string().email()`    | `v.pipe(v.string(), v.email())`                         | `faker.internet.email`             |
+| `z.string().url()`      | `v.pipe(v.string(), v.url())`                           | `faker.internet.url`               |
+| `z.string().uuid()`     | `v.pipe(v.string(), v.uuid())`                          | `faker.string.uuid`                |
+| `z.string().datetime()` | `v.pipe(v.string(), v.isoTimestamp())`                  | an ISO date string                 |
+| —                       | `v.pipe(v.string(), v.isoDateTime())`                   | a local ISO date-time              |
+| —                       | `v.pipe(v.string(), v.isoDate())`                       | an ISO date (`YYYY-MM-DD`)         |
+| —                       | `v.pipe(v.string(), v.isoTime())` / `v.isoTimeSecond()` | a local ISO time                   |
+| —                       | `v.pipe(v.string(), v.isoDateTimeSecond())`             | a local ISO date-time with seconds |
+| —                       | `v.pipe(v.string(), v.isoWeek())`                       | an ISO week (`YYYY-Www`)           |
 
 ```ts
 fake(z.string().email()); // → a syntactically valid email address

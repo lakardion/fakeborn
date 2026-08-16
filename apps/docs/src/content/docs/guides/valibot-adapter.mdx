@@ -46,14 +46,15 @@ fake(User, { adapter: "valibot" });
 Valibot expresses constraints as **pipe actions** — `v.pipe(schema, ...actions)`.
 fakeborn reads the same constraint set as Zod's checks:
 
-| Zod                                           | Valibot                                             |
-| --------------------------------------------- | --------------------------------------------------- |
-| `.min(n)` / `.max(n)` / `.length(n)` (string) | `v.minLength(n)` / `v.maxLength(n)` / `v.length(n)` |
-| `.email()` / `.url()` / `.uuid()`             | `v.email()` / `v.url()` / `v.uuid()`                |
-| `.datetime()`                                 | `v.isoTimestamp()` / `v.isoDateTime()`              |
-| `.int()`                                      | `v.integer()`                                       |
-| `.min(n)` / `.max(n)` (number)                | `v.minValue(n)` / `v.maxValue(n)`                   |
-| `.min(n)` / `.max(n)` / `.length(n)` (array)  | `v.minLength(n)` / `v.maxLength(n)` / `v.length(n)` |
+| Zod                                           | Valibot                                                                                       |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `.min(n)` / `.max(n)` / `.length(n)` (string) | `v.minLength(n)` / `v.maxLength(n)` / `v.length(n)`                                           |
+| `.email()` / `.url()` / `.uuid()`             | `v.email()` / `v.url()` / `v.uuid()`                                                          |
+| `.datetime()`                                 | `v.isoTimestamp()` / `v.isoDateTime()`                                                        |
+| —                                             | `v.isoDate()` / `v.isoTime()` / `v.isoTimeSecond()` / `v.isoDateTimeSecond()` / `v.isoWeek()` |
+| `.int()`                                      | `v.integer()`                                                                                 |
+| `.min(n)` / `.max(n)` (number)                | `v.minValue(n)` / `v.maxValue(n)`                                                             |
+| `.min(n)` / `.max(n)` / `.length(n)` (array)  | `v.minLength(n)` / `v.maxLength(n)` / `v.length(n)`                                           |
 
 ```ts
 const schema = v.object({

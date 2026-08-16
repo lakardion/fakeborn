@@ -35,6 +35,20 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+/**
+ * Format a date as an ISO 8601 week date (`YYYY-Www`, UTC). The ISO week-year
+ * can differ from the calendar year near year boundaries, so the year is read
+ * back off the Thursday-of-this-week anchor rather than the date itself.
+ */
+function isoWeek(date: Date): string {
+  const anchor = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const day = anchor.getUTCDay() || 7; // Sunday is day 7 in ISO, not 0.
+  anchor.setUTCDate(anchor.getUTCDate() + 4 - day); // Thursday of this week.
+  const yearStart = new Date(Date.UTC(anchor.getUTCFullYear(), 0, 1));
+  const week = Math.ceil(((anchor.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
+  return `${anchor.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+}
+
 /** The default kind → faker generator table used by `fake()`. */
 export const defaultFakerMap: FakerMap = {
   string: (node) => {
@@ -51,6 +65,21 @@ export const defaultFakerMap: FakerMap = {
       case "date-time-local":
         // `YYYY-MM-DDTHH:mm` — toISOString() truncated before the seconds.
         return faker.date.anytime().toISOString().slice(0, 16);
+      case "date-only":
+        // `YYYY-MM-DD` — the date part of an ISO timestamp.
+        return faker.date.anytime().toISOString().slice(0, 10);
+      case "time-local":
+        // `HH:mm` — the UTC time part, truncated before the seconds.
+        return faker.date.anytime().toISOString().slice(11, 16);
+      case "time-second-local":
+        // `HH:mm:ss` — the UTC time part, without the fractional seconds.
+        return faker.date.anytime().toISOString().slice(11, 19);
+      case "date-time-second-local":
+        // `YYYY-MM-DDTHH:mm:ss` — a full ISO timestamp minus millis and `Z`.
+        return faker.date.anytime().toISOString().slice(0, 19);
+      case "iso-week":
+        // `YYYY-Www` — the ISO 8601 week date, computed (no slice trick exists).
+        return isoWeek(faker.date.anytime());
     }
     const { length, minLength, maxLength } = node;
     if (length === undefined && minLength === undefined && maxLength === undefined) {

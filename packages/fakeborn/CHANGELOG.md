@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/lakardion/fakeborn/compare/v1.2.2...v1.3.0) (2026-08-16)
+
+
+### Features
+
+* support ZodBranded, ZodDefault, and ZodCatch as runtime-transparent wrappers ([#61](https://github.com/lakardion/fakeborn/issues/61)) ([b0b7cde](https://github.com/lakardion/fakeborn/commit/b0b7cde773fc3708a27631b8ff418872977a05a9)), closes [#50](https://github.com/lakardion/fakeborn/issues/50) [#51](https://github.com/lakardion/fakeborn/issues/51) [#52](https://github.com/lakardion/fakeborn/issues/52)
+
 ## [1.2.2](https://github.com/lakardion/fakeborn/compare/v1.2.1...v1.2.2) (2026-08-16)
 
 

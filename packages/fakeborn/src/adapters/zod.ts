@@ -153,8 +153,9 @@ function arrayLength(def: { typeName: string }): { minLength?: number; maxLength
  * Scalars: ZodString, ZodNumber, ZodBoolean, ZodDate, ZodBigInt, ZodLiteral,
  * ZodEnum. Composites: ZodObject, ZodArray, ZodTuple, ZodUnion, ZodOptional,
  * ZodNullable — these recurse back through `zodToIR` on their child schemas, so
- * nesting works to arbitrary depth. ZodReadonly is a runtime-transparent
- * wrapper (ADR-0001): unwrapped, faking the inner schema directly.
+ * nesting works to arbitrary depth. ZodReadonly, ZodBranded, ZodDefault, and
+ * ZodCatch are runtime-transparent wrappers (ADR-0001): unwrapped, faking the
+ * inner schema directly.
  * String/number/array constraints (lengths,
  * formats, int/bounds) are read off `_def.checks` and surfaced on the IR.
  * Unsupported constructs throw a descriptive error rather than producing a
@@ -238,10 +239,38 @@ export function zodToIR(schema: unknown): IRNode {
         return zodToIR(def.innerType);
       }
       break;
+    case "ZodBranded":
+      // Runtime-transparent wrapper (ADR-0001): `.brand()` is type-level
+      // fiction — the runtime value is unchanged, so the fake is simply the
+      // inner schema's fake. Unlike the other wrappers, the wrapped schema
+      // lives on `_def.type`.
+      if (def && "type" in def) {
+        return zodToIR(def.type);
+      }
+      break;
+    case "ZodDefault":
+      // Runtime-transparent wrapper (ADR-0001): `.default()` only applies when
+      // the key is absent, and fakes are always generated present, so the fake
+      // is the inner schema's fake — never the default, never undefined —
+      // which satisfies the non-optional `_output`. `_def.innerType` is the
+      // wrapped schema.
+      if (def && "innerType" in def) {
+        return zodToIR(def.innerType);
+      }
+      break;
+    case "ZodCatch":
+      // Runtime-transparent wrapper (ADR-0001): `.catch()` only engages on
+      // parse failure; a faked inner value parses, so the catch value never
+      // surfaces. `_def.innerType` is the wrapped schema.
+      if (def && "innerType" in def) {
+        return zodToIR(def.innerType);
+      }
+      break;
   }
   throw new UnsupportedSchemaError(
     `fakeborn: unsupported Zod schema "${def?.typeName ?? "unknown"}". ` +
       "Supported so far: string, number, boolean, date, bigint, literal, enum, " +
-      "object, array, tuple, union, optional, nullable, readonly. More constructs are coming.",
+      "object, array, tuple, union, optional, nullable, readonly, brand, " +
+      "default, catch. More constructs are coming.",
   );
 }

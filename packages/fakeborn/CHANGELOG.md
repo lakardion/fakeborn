@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/lakardion/fakeborn/compare/v1.3.0...v1.4.0) (2026-08-16)
+
+
+### Features
+
+* **zod:** support ZodNativeEnum, ZodAny/ZodUnknown, ZodVoid/ZodUndefined ([#62](https://github.com/lakardion/fakeborn/issues/62)) ([c0f06ca](https://github.com/lakardion/fakeborn/commit/c0f06ca1e755e3ca8660955348cf742c10447184)), closes [#53](https://github.com/lakardion/fakeborn/issues/53) [#54](https://github.com/lakardion/fakeborn/issues/54) [#55](https://github.com/lakardion/fakeborn/issues/55) [#53](https://github.com/lakardion/fakeborn/issues/53) [#54](https://github.com/lakardion/fakeborn/issues/54) [#55](https://github.com/lakardion/fakeborn/issues/55) [post-#61](https://github.com/post-/issues/61)
+
 # [1.3.0](https://github.com/lakardion/fakeborn/compare/v1.2.2...v1.3.0) (2026-08-16)
 
 

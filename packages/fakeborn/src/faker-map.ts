@@ -111,6 +111,16 @@ export const defaultFakerMap: FakerMap = {
   // A literal is its one allowed value; an enum is one of its allowed members.
   literal: (node) => node.value,
   enum: (node) => faker.helpers.arrayElement(node.values),
+  // `any` fakes an arbitrary JSON-safe value (ADR-0001): a string, number,
+  // boolean, or simple object. More useful in mocks than `undefined`, and it
+  // always parses through z.any()/z.unknown().
+  any: () =>
+    faker.helpers.arrayElement([
+      () => faker.string.sample(),
+      () => faker.number.float(),
+      () => faker.datatype.boolean(),
+      () => ({ [faker.lorem.word()]: faker.lorem.words() }),
+    ])(),
   // Composites recurse through `ctx.generate`, so they never touch faker
   // directly for their children and nest to arbitrary depth.
   object: (node, ctx) => {

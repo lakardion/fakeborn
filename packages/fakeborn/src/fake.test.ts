@@ -424,3 +424,104 @@ describe("fake() — options", () => {
     expect(() => schema.parse(value)).not.toThrow();
   });
 });
+
+describe("fake() — Zod secondary constructs (ADR-0001)", () => {
+  // z.nativeEnum(): fake = a random pick from the enum's visible values (#53).
+  test("nativeEnum: string enum fakes a declared member and parses", () => {
+    enum Color {
+      Red = "RED",
+      Green = "GREEN",
+      Blue = "BLUE",
+    }
+    const schema = z.nativeEnum(Color);
+    roundTrip(schema);
+    faker.seed(0);
+    expect(Object.values(Color)).toContain(fake(schema));
+  });
+
+  test("nativeEnum: numeric enum fakes only the visible values, never reverse mappings", () => {
+    // TS compiles this to { 0: "Low", 1: "Medium", 2: "High", Low: 0, … } —
+    // the string keys are reverse mappings, not valid enum members.
+    enum Level {
+      Low,
+      Medium,
+      High,
+    }
+    const schema = z.nativeEnum(Level);
+    roundTrip(schema);
+    for (let i = 0; i < 200; i++) {
+      faker.seed(i);
+      expect([Level.Low, Level.Medium, Level.High]).toContain(fake(schema));
+    }
+  });
+
+  test("nativeEnum: nested inside an object round-trips", () => {
+    enum Status {
+      Active = "ACTIVE",
+      Inactive = "INACTIVE",
+    }
+    const schema = z.object({ status: z.nativeEnum(Status), count: z.number().int() });
+    roundTrip(schema);
+  });
+
+  // z.any(): fake = an arbitrary JSON-safe value, never undefined (#54).
+  test("any: round-trips, is always defined, and JSON.stringify never throws", () => {
+    const schema = z.any();
+    roundTrip(schema);
+    for (let i = 0; i < 500; i++) {
+      faker.seed(i);
+      const value = fake(schema);
+      expect(value).toBeDefined();
+      expect(() => JSON.stringify(value)).not.toThrow();
+    }
+  });
+
+  test("any: covers string/number/boolean/object shapes across seeds", () => {
+    const schema = z.any();
+    const types = new Set<string>();
+    for (let i = 0; i < 500; i++) {
+      faker.seed(i);
+      const value = fake(schema);
+      types.add(Array.isArray(value) ? "array" : typeof value);
+    }
+    expect(types).toContain("string");
+    expect(types).toContain("number");
+    expect(types).toContain("boolean");
+    expect(types).toContain("object");
+  });
+
+  test("any: z.unknown() shares the same treatment", () => {
+    const schema = z.unknown();
+    roundTrip(schema);
+    faker.seed(0);
+    expect(fake(schema)).toBeDefined();
+  });
+
+  test("any: nested inside an object round-trips", () => {
+    const schema = z.object({ id: z.string().uuid(), payload: z.any() });
+    roundTrip(schema);
+    faker.seed(0);
+    const value = fake(schema);
+    expect(value.payload).toBeDefined();
+  });
+
+  // z.void() / z.undefined(): fake = undefined (#55).
+  test("void/undefined: fake is undefined and parses", () => {
+    const voidSchema = z.void();
+    const undefSchema = z.undefined();
+    roundTrip(voidSchema);
+    roundTrip(undefSchema);
+    expect(fake(voidSchema)).toBeUndefined();
+    expect(fake(undefSchema)).toBeUndefined();
+  });
+
+  test("void/undefined: as object fields round-trip", () => {
+    const schema = z.object({ id: z.string(), nothing: z.undefined(), done: z.void() });
+    roundTrip(schema);
+    faker.seed(0);
+    const value = fake(schema);
+    expect(typeof value.id).toBe("string");
+    expect(value.nothing).toBeUndefined();
+    expect(value.done).toBeUndefined();
+  });
+});

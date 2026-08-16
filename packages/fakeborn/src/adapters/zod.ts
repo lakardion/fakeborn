@@ -28,6 +28,21 @@ function checksOf(def: { typeName: string }): readonly unknown[] {
 
 type StringConstraints = Omit<Extract<IRNode, { kind: "string" }>, "kind">;
 
+/**
+ * Zod stores a native enum's runtime object on `_def.values`. Numeric TS enums
+ * carry reverse mappings (`{ 0: "A", A: 0 }`), so — mirroring zod's own
+ * visible-values rule — a key is a real member only when its reverse lookup
+ * isn't a number. Returns the visible values, or undefined for a non-object.
+ */
+function nativeEnumValues(obj: unknown): unknown[] | undefined {
+  if (typeof obj !== "object" || obj === null) return undefined;
+  const entries = Object.entries(obj);
+  const lookup = new Map(entries);
+  return entries.flatMap(([, value]) =>
+    typeof lookup.get(String(value)) === "number" ? [] : [value],
+  );
+}
+
 /** Map Zod string checks onto the IR string constraint fields. */
 function stringConstraints(checks: readonly unknown[]): StringConstraints {
   const out: StringConstraints = {};
@@ -151,7 +166,7 @@ function arrayLength(def: { typeName: string }): { minLength?: number; maxLength
  * narrowed `_def` with `in`-narrowing — still no cast — as each construct lands.
  *
  * Scalars: ZodString, ZodNumber, ZodBoolean, ZodDate, ZodBigInt, ZodLiteral,
- * ZodEnum. Composites: ZodObject, ZodArray, ZodTuple, ZodUnion, ZodOptional,
+ * ZodEnum, ZodNativeEnum, ZodAny/ZodUnknown, ZodVoid/ZodUndefined. Composites: ZodObject, ZodArray, ZodTuple, ZodUnion, ZodOptional,
  * ZodNullable — these recurse back through `zodToIR` on their child schemas, so
  * nesting works to arbitrary depth. ZodReadonly, ZodBranded, ZodDefault, and
  * ZodCatch are runtime-transparent wrappers (ADR-0001): unwrapped, faking the
@@ -188,6 +203,23 @@ export function zodToIR(schema: unknown): IRNode {
         return { kind: "enum", values: def.values };
       }
       break;
+    case "ZodNativeEnum":
+      // The enum's runtime object lives on `_def.values`; numeric enums need
+      // their reverse mappings filtered out (see nativeEnumValues).
+      if (def && "values" in def) {
+        const values = nativeEnumValues(def.values);
+        if (values) return { kind: "enum", values };
+      }
+      break;
+    case "ZodAny":
+    case "ZodUnknown":
+      // ADR-0001: fake an arbitrary JSON-safe value rather than `undefined`.
+      return { kind: "any" };
+    case "ZodVoid":
+    case "ZodUndefined":
+      // ADR-0001: `undefined` parses through both — reuse the literal node,
+      // whose generator returns `node.value` as-is.
+      return { kind: "literal", value: undefined };
     case "ZodObject":
       // `_def.shape` is a thunk returning the `{ key: schema }` map; each value
       // is itself a schema, walked recursively.
@@ -270,6 +302,7 @@ export function zodToIR(schema: unknown): IRNode {
   throw new UnsupportedSchemaError(
     `fakeborn: unsupported Zod schema "${def?.typeName ?? "unknown"}". ` +
       "Supported so far: string, number, boolean, date, bigint, literal, enum, " +
+      "native enum, any, unknown, void, undefined, " +
       "object, array, tuple, union, optional, nullable, readonly, brand, " +
       "default, catch. More constructs are coming.",
   );

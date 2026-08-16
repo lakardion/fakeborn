@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/lakardion/fakeborn/compare/v1.2.1...v1.2.2) (2026-08-16)
+
+
+### Bug Fixes
+
+* map the rest of Valibot's ISO actions to exact-shape IR formats ([#60](https://github.com/lakardion/fakeborn/issues/60)) ([4bff331](https://github.com/lakardion/fakeborn/commit/4bff33198bac7636b9032181050318711bbadff2)), closes [#59](https://github.com/lakardion/fakeborn/issues/59)
+
 ## [1.2.1](https://github.com/lakardion/fakeborn/compare/v1.2.0...v1.2.1) (2026-08-16)
 
 

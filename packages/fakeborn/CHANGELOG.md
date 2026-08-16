@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/lakardion/fakeborn/compare/v1.2.0...v1.2.1) (2026-08-16)
+
+
+### Bug Fixes
+
+* give v.isoDateTime() its own IR format so fakes parse ([#58](https://github.com/lakardion/fakeborn/issues/58)) ([e53fc4b](https://github.com/lakardion/fakeborn/commit/e53fc4b35094b340150535938dde36ed26ec30e2)), closes [#35](https://github.com/lakardion/fakeborn/issues/35)
+
 # [1.2.0](https://github.com/lakardion/fakeborn/compare/v1.1.0...v1.2.0) (2026-08-12)
 
 

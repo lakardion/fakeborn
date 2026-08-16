@@ -53,8 +53,13 @@ function stringConstraints(pipe: readonly unknown[]): StringConstraints {
         out.format = action.type;
         break;
       case "iso_timestamp":
-      case "iso_date_time":
+        // Full ISO 8601 with seconds + timezone designator — `toISOString()` shape.
         out.format = "date-iso";
+        break;
+      case "iso_date_time":
+        // Valibot's ISO_DATE_TIME_REGEX is hours+minutes only, no seconds, no
+        // timezone — a distinct IR format, since the `date-iso` shape never matches.
+        out.format = "date-time-local";
         break;
       case "min_length":
         out.minLength = requirement(action);

@@ -208,6 +208,15 @@ describe("fake() — Valibot constraints & formats", () => {
     roundTrip(v.pipe(v.string(), v.isoTimestamp()));
   });
 
+  test("isoDateTime produces the hours+minutes local shape and parses (regression: #35)", () => {
+    // Valibot's ISO_DATE_TIME_REGEX wants `YYYY-MM-DDTHH:mm` — no seconds, no
+    // timezone — so the `date-iso` (toISOString) shape would never match.
+    const schema = v.pipe(v.string(), v.isoDateTime());
+    roundTrip(schema);
+    faker.seed(0);
+    expect(fake(schema)).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
+  });
+
   test("v.integer() produces an integer; plain numbers may be floats", () => {
     const intSchema = v.pipe(v.number(), v.integer());
     roundTrip(intSchema);

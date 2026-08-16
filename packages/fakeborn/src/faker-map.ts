@@ -48,6 +48,9 @@ export const defaultFakerMap: FakerMap = {
         return faker.string.uuid();
       case "date-iso":
         return faker.date.anytime().toISOString();
+      case "date-time-local":
+        // `YYYY-MM-DDTHH:mm` — toISOString() truncated before the seconds.
+        return faker.date.anytime().toISOString().slice(0, 16);
     }
     const { length, minLength, maxLength } = node;
     if (length === undefined && minLength === undefined && maxLength === undefined) {

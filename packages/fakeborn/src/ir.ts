@@ -20,7 +20,7 @@
 export type IRNode =
   | {
       kind: "string";
-      format?: "email" | "url" | "uuid" | "date-iso";
+      format?: "email" | "url" | "uuid" | "date-iso" | "date-time-local";
       minLength?: number;
       maxLength?: number;
       length?: number;

@@ -10,9 +10,9 @@ schema's own validator.**
 > **Status:** v1. Both adapters are in — **Zod** (v3) and **Valibot** (v1) —
 > covering scalars, composites (object, array, tuple, union, optional, nullable),
 > runtime-transparent wrappers (Zod `.readonly()`, `.brand()`, `.default()`,
-> `.catch()`), and the introspectable constraints (string lengths/formats,
-> number int/bounds, array lengths). See the
-> [PRD](https://github.com/lakardion/fakeborn/issues/1) and
+> `.catch()`; Valibot `v.readonly()`, `v.brand()`), and the introspectable
+> constraints (string lengths/formats, number int/bounds, array lengths). See
+> the [PRD](https://github.com/lakardion/fakeborn/issues/1) and
 > [Limitations](#limitations).
 
 ## Install

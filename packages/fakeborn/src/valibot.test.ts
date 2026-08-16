@@ -34,6 +34,13 @@ describe("fake() — Valibot detection", () => {
     expect(() => fake(v.record(v.string(), v.number()))).toThrow(/unsupported Valibot schema/i);
   });
 
+  test("a standalone pipe action is not a schema and is rejected", () => {
+    // `v.readonly()` on its own returns a transformation *action*, not a
+    // schema — the canonical form is `v.pipe(schema, v.readonly())`. Detection
+    // must reject the bare action rather than faking against nothing.
+    expect(() => fake(v.readonly() as unknown as v.GenericSchema)).toThrow(UnsupportedSchemaError);
+  });
+
   test("unsupported Valibot construct throws a named UnsupportedSchemaError naming the construct", () => {
     try {
       fake(v.record(v.string(), v.number()));
@@ -182,6 +189,54 @@ describe("fake() — Valibot composite types", () => {
       deletedAt: v.nullable(v.date()),
       coords: v.tuple([v.number(), v.number()]),
       kind: v.union([v.literal("a"), v.literal("b")]),
+    });
+    roundTrip(schema);
+  });
+});
+
+describe("fake() — Valibot runtime-transparent wrappers", () => {
+  // ADR-0001: `v.brand()` / `v.readonly()` are pipe actions with
+  // kind "transformation" — they constrain nothing at parse time, so the
+  // adapter's constraint read (which only honors kind "validation" actions)
+  // passes straight through them and fakes the base schema.
+  test("brand: a branded scalar fakes its base type and parses", () => {
+    const schema = v.pipe(v.string(), v.brand("Id"));
+    roundTrip(schema);
+    faker.seed(0);
+    expect(typeof fake(schema)).toBe("string");
+  });
+
+  test("brand: constraint actions alongside the brand are still honored", () => {
+    roundTrip(v.pipe(v.string(), v.email(), v.brand("Email")));
+    roundTrip(v.pipe(v.string(), v.uuid(), v.brand("Id")));
+    roundTrip(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(100), v.brand("Score")));
+  });
+
+  test("readonly: wrapping a whole object composite fakes the composite", () => {
+    const schema = v.pipe(
+      v.object({ id: v.pipe(v.string(), v.uuid()), tags: v.array(v.string()) }),
+      v.readonly(),
+    );
+    roundTrip(schema);
+  });
+
+  test("readonly: wrapping arrays and tuples fakes the composite and parses", () => {
+    roundTrip(v.pipe(v.array(v.string()), v.readonly()));
+    roundTrip(v.pipe(v.tuple([v.string(), v.number()]), v.readonly()));
+  });
+
+  test("brand + readonly in the same pipe round-trip", () => {
+    roundTrip(v.pipe(v.string(), v.minLength(3), v.brand("Name"), v.readonly()));
+  });
+
+  test("branded and readonly members nested inside a larger schema round-trip", () => {
+    const schema = v.object({
+      id: v.pipe(v.string(), v.uuid(), v.brand("Id")),
+      profile: v.pipe(
+        v.object({ email: v.pipe(v.string(), v.email()), tags: v.array(v.string()) }),
+        v.readonly(),
+      ),
+      scores: v.array(v.pipe(v.number(), v.integer(), v.brand("Score"))),
     });
     roundTrip(schema);
   });
